@@ -1,0 +1,180 @@
+Database Design
+===============
+Here is the table structure of the CMDB defined.
+You also find a short concept how the fields should be used.
+
+* All data, expect roles and permissions, is an object!
+* Use PostgreSQL because they have MVCC and recursive queries.
+
+
+### CMDB Core (.core) ###
+
+
+        +--- 1:1 -->  options
+        |
+        |  +--------------- 1:1 ----------------+
+        |  |                                    |
+        v  v                                    |
+                                                |
+      objects  <-+-- 1:n -->  objects_archive   |
+                 |                              |
+      ^  ^  ^   1:1              ^   ^          |
+    +-+  |  |    |               |   |          |
+    |    |  +----+        +------+  n:1         |
+    |   1:1               |          |          |
+    |    |                |       +--+          |
+    |    +--+   +-- 1:n --+       |             |
+    |       |   |                 |  +----------+
+    |       |   |                 |  |
+   1:n      v   v                 v  v
+    |
+    |   premissions  <-- 1:1 -->  roles  <-- 1:n --> roles_membership
+    |
+    |         ^                    ^
+    +---+     |                    |
+        |    1:n   +----- n:1 -----+
+        |     |    |
+        v     v    v
+
+      permissions_audit
+
+
+objects -- Stores all data in objects
+======
+id		bigint unsigned		not null	PK	auto_increment
+parent_id	bigint unsigned		null		FK
+value		blob			null
+type		enum(Types)		not null
+name		varchar(80)		not null
+version		int unsigned		not null
+mtime		datetime		not null
+role_id		int unsigned		null		FK
+
+Types: obj(ect), int(eger), d(ou)bl(e), t(e)xt, blo(b)
+
+* A attribute is identified by the type field; it is one, if that is not
+ 'obj'. So reverse, a object is defined by the type 'obj'.
+* The name field for tree objects can be understood as a tag field (non unique).
+* If a object is modified it will be copied to the archive table before.
+* If the role_id is set in an object, it is locked for him/her and can not be
+  modified by others.
+* When saving the object with new data, the role_id is copied to the archive
+  which also indicates who has created, modified or deleted the object and than
+  removed from the objects table (release the lock).
+
+
+objects_archive -- Archives modified objects as a history
+==============
+id		bigint unsigned		not null	FK
+parent_id	bigint unsigned		null		FK
+value		blob			null
+type		enum(Types)		not null
+name		varchar(60)		not null
+version		int unsigned		not null		index
+mtime		datetime		not null
+role_id		int unsigned		not null	FK
+atime		datetime		not null		default=now()
+
+* Saves the objct history. atime means archive time.
+
+
+references -- Links are not data and must not be stored for revision
+==========
+object_id	bigint unsigned	not null	FK
+ref_object_id	bigint unsigned	not null	FK
+type		enum(Types)	not null
+
+Types: l(i)nk, ...
+
+* Who cares about links and so on? - Data is not affected through this and no
+  revisioning is needed for this stuff.
+
+
+roles -- Defines users and roles for permission handling
+=====
+id		int unsigned		not null	PK	auto_increment
+type		enum(Roles)		not null
+
+Roles: us(e)r, gr(ou)p
+
+* The role_id is the interface to a used authentication backend.
+* Created roles can never be changed after they have been created.
+* The first role is the system account for internal data handling (options).
+
+
+roles_membership -- Assigns roles to roles like groups or user cloning
+==========
+role_id		int unsigned		not null	FK
+add_role_id	int unsigned		not null	FK
+
+* role_id is the role which is member of the role add_role_id.
+* User rights can be cloned if a users role is added to another user role.
+* If the role in add_role_id is of type 'grp' this is like grouping users.
+* Roles of the type group can also be members of a group role.
+
+
+permissions -- Grants permissions for objects to roles
+===========
+object_id	bigint unsigned		not null	FK
+role_id		int unsigned		not null	FK
+permission	tinyint unsigned	not null
+
+Permissions:
+1 = read
+2 = write
+
+* Permissions are applied recursive over a object tree and can only be
+  overwritten by higher permissions.
+* When a permission is changed, it will be copied with the role_id of the user
+  who changed it to the permissions audit table.
+
+
+permissions_audit -- Save the changed permissions as a trace
+=================
+object_id	bigint unsigned		not null	FK
+role_id		int unsigned		not null	FK
+permission	int unsigned		not null
+changed_by_role	int unsigned		not null
+atime		datetime		not null		default=now()
+
+* The permissions audit table traces all changes on the permissions table.
+* atime means there audit time.
+
+
+options -- Stores application internal options
+=======
+name		varchar(120)		not null	PK	unique index
+object_id	bigint unsigned		not null	FK
+
+* The option name should be dot notated like '.core.object.archive.not-on-modify'.
+* The value for this option is stored in the objects table.
+* Options can not be saved complete as objects because there is no human readable
+  unique identifier.
+
+
+
+### CMDB Database Auth (.auth.db) ###
+
+TODO
+
+auth_db_users -- Stores user information in the database
+=============
+role_id		int unsigned	not null	FK
+username	varchar(40)	not null	unique index
+email		varchar(250)	not null
+password	char(128)	null
+last_login	datetime	null
+...
+
+
+auth_db_groups -- Storges group information to roles in database
+==============
+role_id		int unsigned	not null	FK
+groupname	varchar(40)	not null	unique index
+...
+
+
+
+### CMDB LDAP Auth ###
+
+TODO
