@@ -42,6 +42,19 @@ create type core.role_type_enum as enum ('user', 'group');
 create type core.ref_type_enum as enum ('parent', 'link');
 
 
+-- roles - Defines users and roles for permission handling
+create table core.roles (
+	id		serial			not null	primary key,
+	role_type	core.role_type_enum	not null
+);
+
+-- roles_membership - Assigns roles to roles like groups or user cloning
+create table core.roles_memebership (
+	role_id		integer			not null	references core.roles (id),
+	add_role_id	integer			not null	references core.roles (id)
+);
+
+
 -- objects - Stores all data in objects
 create table core.objects (
 	id		bigserial		not null	primary key,
@@ -87,18 +100,6 @@ create table core.references_archive (
 	atime		timestamp		not null
 );
 
-
--- roles - Defines users and roles for permission handling
-create table core.roles (
-	id		serial			not null	primary key,
-	role_type	core.role_type_enum	not null
-);
-
--- roles_membership - Assigns roles to roles like groups or user cloning
-create table core.roles_memebership (
-	role_id		integer			not null	references core.roles (id),
-	add_role_id	integer			not null	references core.roles (id)
-);
 
 -- permissions - Grants permissions for objects to roles
 create table core.permissions (
