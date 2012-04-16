@@ -17,15 +17,19 @@
 --    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+-- connect to db as right user
+\connect cmdb cmdb_admin
+
+
 ---- object handling
 
 -- insert object
 -- Usage: core.object_insert (value, value_type, name, role_id)
 -- Returns: id of new object
-create function core.object_insert (
+create or replace function core.object_insert (
 	bytea,
-	varchar(10),
-	varchar(80),
+	core.value_type_enum,
+	varchar(120),
 	integer
 ) returns bigint as $$
 	insert into core.objects (
@@ -33,23 +37,108 @@ create function core.object_insert (
 		value_type,
 		name,
 		version,
-		mtime
+		mtime,
+		locked_by_role_id
 	) values (
 		$1,
 		$2,
 		$3,
 		1,
-		now()
+		now(),
+		0
 	);
-	insert into core.objects_archive select
+
+	insert into core.objects_archive (
 		id,
 		value,
 		value_type,
 		name,
 		version,
 		mtime,
-		$4,
-		mtime
+		modified_by_role_id
+	) select
+		id,
+		value,
+		value_type,
+		name,
+		0,
+		mtime,
+		$4
 	from core.objects where id=lastval()
 	returning lastval() as id;
 $$ language sql;
+
+grant execute on function core.object_insert (bytea, core.value_type_enum, varchar(120), integer) to cmdb_admin;
+
+
+-- delete object
+-- Usage: core.object_delete(id, role_id)
+-- Returns: version of deleted object
+create or replace function core.objects_delete (
+	bigint,
+	integer
+) returns integer as $$
+	insert into core.objects_archive (
+		id,
+		value,
+		value_type,
+		name,
+		version,
+		mtime,
+		modified_by_role_id
+	) select
+		id,
+		value,
+		value_type,
+		name,
+		version,
+		mtime,
+		$2
+	from core.objects where id=$1;
+
+	delete from core.objects where id=$1
+	returning version as version;
+$$ language sql security definer;
+
+grant execute on function core.objects_delete (bigint, integer) to cmdb;
+
+
+-- update object
+-- Usage: core.object_update(id, value, value_type, name, role_id)
+-- Returns: version of new object
+create or replace function core.objects_update (
+	bigint,
+	bytea,
+	core.value_type_enum,
+	varchar(120),
+	integer
+) returns integer as $$
+	insert into core.objects_archive (
+		id,
+		value,
+		value_type,
+		name,
+		version,
+		mtime,
+		modified_by_role_id
+	) select
+		id,
+		value,
+		value_type,
+		name,
+		version,
+		mtime,
+		$5
+	from core.objects where id=$1;
+
+	update core.objects set
+		value		= $2,
+		value_type	= $3,
+		name		= $4,
+		version		= version + 1,
+		mtime		= now()
+	where id=$1
+	returning version as version;
+$$ language sql security definer;
+
+grant execute on function core.objects_update (bigint, bytea, core.value_type_enum, varchar(120), integer) to cmdb;
