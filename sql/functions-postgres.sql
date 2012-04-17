@@ -38,6 +38,7 @@ create or replace function core.object_insert (
 		name,
 		version,
 		mtime,
+		modified_by_role_id,
 		locked_by_role_id
 	) values (
 		$1,
@@ -45,36 +46,19 @@ create or replace function core.object_insert (
 		$3,
 		1,
 		now(),
-		0
-	);
-
-	insert into core.objects_archive (
-		id,
-		value,
-		value_type,
-		name,
-		version,
-		mtime,
-		modified_by_role_id
-	) select
-		id,
-		value,
-		value_type,
-		name,
-		0,
-		mtime,
-		$4
-	from core.objects where id=lastval()
+		$4,
+		null
+	)
 	returning lastval() as id;
-$$ language sql;
+$$ language sql security definer;
 
-grant execute on function core.object_insert (bytea, core.value_type_enum, varchar(120), integer) to cmdb_admin;
+grant execute on function core.object_insert (bytea, core.value_type_enum, varchar(120), integer) to cmdb;
 
 
 -- delete object
 -- Usage: core.object_delete(id, role_id)
 -- Returns: version of deleted object
-create or replace function core.objects_delete (
+create or replace function core.object_delete (
 	bigint,
 	integer
 ) returns integer as $$
@@ -100,13 +84,13 @@ create or replace function core.objects_delete (
 	returning version as version;
 $$ language sql security definer;
 
-grant execute on function core.objects_delete (bigint, integer) to cmdb;
+grant execute on function core.object_delete (bigint, integer) to cmdb;
 
 
 -- update object
 -- Usage: core.object_update(id, value, value_type, name, role_id)
 -- Returns: version of new object
-create or replace function core.objects_update (
+create or replace function core.object_update (
 	bigint,
 	bytea,
 	core.value_type_enum,
@@ -128,17 +112,18 @@ create or replace function core.objects_update (
 		name,
 		version,
 		mtime,
-		$5
+		modified_by_role_id
 	from core.objects where id=$1;
 
 	update core.objects set
-		value		= $2,
-		value_type	= $3,
-		name		= $4,
-		version		= version + 1,
-		mtime		= now()
+		value			= $2,
+		value_type		= $3,
+		name			= $4,
+		version			= version + 1,
+		mtime			= now(),
+		modified_by_role_id	= $5
 	where id=$1
 	returning version as version;
 $$ language sql security definer;
 
-grant execute on function core.objects_update (bigint, bytea, core.value_type_enum, varchar(120), integer) to cmdb;
+grant execute on function core.object_update (bigint, bytea, core.value_type_enum, varchar(120), integer) to cmdb;
