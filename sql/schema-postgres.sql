@@ -66,10 +66,9 @@ create table core.objects (
 	id			bigserial		not null	primary key,
 	value			bytea			null		default null,
 	value_type		core.value_type_enum	not null,
-	name			varchar(120)		not null,
+	name			varchar(120)		null,
 	version			integer			not null,
 	mtime			timestamp		not null,
-	modified_by_role_id	integer			not null	references core.roles (id),
 	locked_by_role_id	integer			null		references core.roles (id) default null
 );
 
@@ -78,7 +77,7 @@ create table core.objects_archive (
 	id			bigint			not null,
 	value			bytea			null,
 	value_type		core.value_type_enum	not null,
-	name			varchar(120)		not null,
+	name			varchar(120)		null,
 	version			integer			not null,
 	mtime			timestamp		not null,
 	modified_by_role_id	integer			not null	references core.roles (id)
@@ -92,7 +91,6 @@ create table core.references (
 	reference_type		core.reference_type_enum not null,
 	version			integer			not null,
 	mtime			timestamp		not null,
-	modified_by_role_id	integer			not null	references core.roles (id),
 	locked_by_role_id	integer			null		references core.roles (id) default null,
 	primary key(object_id, referenced_object_id, reference_type)
 );
