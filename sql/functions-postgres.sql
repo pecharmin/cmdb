@@ -38,7 +38,6 @@ create or replace function core.object_insert (
 		name,
 		version,
 		mtime,
-		modified_by_role_id,
 		locked_by_role_id
 	) values (
 		$1,
@@ -46,9 +45,26 @@ create or replace function core.object_insert (
 		$3,
 		1,
 		now(),
-		$4,
 		null
-	)
+	);
+
+	insert into core.objects_archive (
+		id,
+		value,
+		value_type,
+		name,
+		version,
+		mtime,
+		modified_by_role_id
+	) select
+		lastval(),
+		null,
+		$2,
+		null,
+		0,
+		mtime,
+		$4
+	from core.objects where id=lastval()
 	returning lastval() as id;
 $$ language sql security definer;
 
@@ -112,7 +128,7 @@ create or replace function core.object_update (
 		name,
 		version,
 		mtime,
-		modified_by_role_id
+		$5
 	from core.objects where id=$1;
 
 	update core.objects set
@@ -120,8 +136,7 @@ create or replace function core.object_update (
 		value_type		= $3,
 		name			= $4,
 		version			= version + 1,
-		mtime			= now(),
-		modified_by_role_id	= $5
+		mtime			= now()
 	where id=$1
 	returning version as version;
 $$ language sql security definer;
