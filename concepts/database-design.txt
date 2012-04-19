@@ -7,7 +7,7 @@ You also find a short concept how the fields should be used.
 * Use PostgreSQL because they have MVCC and recursive queries.
 
 
-### CMDB Core (.core) ###
+### CMDB Core (.cmdb.core) ###
 
 
                    +------ 1:1 ---->  tags
@@ -157,7 +157,7 @@ object_id	bigint unsigned		not null	FK
 
 
 
-### CMDB Database Auth (.auth.db) ###
+### CMDB Database Auth (.cmdb.core.auth.db) ###
 
 TODO
 
@@ -179,6 +179,6 @@ groupname	varchar(40)	not null	unique index
 
 
 
-### CMDB LDAP Auth ###
+### CMDB LDAP Auth (.cmdb.core.auth.ldap) ###
 
 TODO
