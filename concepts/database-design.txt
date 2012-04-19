@@ -10,33 +10,37 @@ You also find a short concept how the fields should be used.
 ### CMDB Core (.core) ###
 
 
-        +--- 1:1 -->  options
-        |
-        |  +--------------- 1:1 ----------------+
-        |  |                                    |
-        v  v                                    |
-                                                |
-      objects  <-+-- 1:n -->  objects_archive   |
-                 |                              |
-      ^  ^  ^   1:1              ^   ^          |
-    +-+  |  |    |               |   |          |
-    |    |  +----+        +------+  n:1         |
-    |   1:1               |          |          |
-    |    |                |       +--+          |
-    |    +--+   +-- 1:n --+       |             |
-    |       |   |                 |  +----------+
-    |       |   |                 |  |
-   1:n      v   v                 v  v
-    |
-    |   premissions  <-- 1:1 -->  roles  <-- 1:n --> roles_membership
-    |
-    |         ^                    ^
-    +---+     |                    |
-        |    1:n   +----- n:1 -----+
-        |     |    |
-        v     v    v
-
-      permissions_audit
+                   +------ 1:1 ---->  tags
+    references_\   |
+    archive        | +--- 1:1 -->  options
+                   | |
+      ^   ^        | |  +--------------- 1:1 ----------------+
+      |   |        | |  |                                    |
+      |  n:m       v v  v                                    |
+      |   |                                                  |
+      |   +----->  objects  <-+-- 1:n -->  objects_archive   |
+  +---+   |                                                  |
+  |      n:m       ^   ^                      ^   ^          |
+  |       |      +-+   |                      |   |          |
+  |       v      |     |               +------+  n:1         |
+  |              |    1:1              |          |          |
+  |  references  |     |               |       +--+          |
+  |              |     +-+   +-- 1:n --+       |             |
+  |       ^      |       |   |                 |  +----------+
+  |       |      |       |   |                 |  |
+  |       |     1:n      v   v                 v  v
+  |       |      |
+  |       |      |   permissions  <-- 1:1 -->  roles  <--+
+  |       |      |                                       |
+  |       |      |         ^                   ^  ^     1:n
+  |       |      +---+     |                   |  |      |
+  |       |          |    1:n   +----- n:1 ----+  |      v
+  |       |          |     |    |                 |
+  |       |          v     v    v                 |   roles_\
+  |       |                                       |   membership
+  |       |       permissions_archive             |
+  |       |                                       |
+  +-------+-------------- n:1 --------------------+
 
 
 objects -- Stores all data in objects
