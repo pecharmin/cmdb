@@ -1,0 +1,23 @@
+Interal Application Structure
+=============================
+
+* The program features are implemented in different domains for logical
+  separation. The sub/domains are separated by dots like .core.subfeat
+* Subdomains must not access their parent domain.
+* The data flow goes up from the parents to their childs.
+* Domains are not allowed to access their siblings directly.
+* References can link domain siblings for data exchange (one direction
+  only!) togehter.
+
+* The CMDB core is named '.cmdb.core'.
+* There will be more features available under:
+** .cmdb.core.auth
+   .cmdb.core.auth.db
+   .cmdb.core.auth.ldap
+** .cmdb.gui
+   .cmdb.gui.web
+   .cmdb.gui.web.session
+   .cmdb.gui.web.tree
+   .cmdb.gui.web.edit
+** .cmdb.api
+   .cmdb.api.txt
