@@ -1,3 +1,5 @@
 SQL functions
+* change FK contraint on references table
+** NULL-Wert in Spalte referenced_object_id verletzt Not-Null-Constraint
 * general data modification and selection functions
 * select object tree by id with depth
