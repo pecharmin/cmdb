@@ -227,6 +227,7 @@ grant execute on function core.reference_insert (bigint, bigint, core.reference_
 
 -- update reference by object's ids and type
 -- Usage: core.reference_update(object_id, new_refed_object_id, new_type, role_id)
+-- Returns: new referenced_object_id
 create or replace function core.reference_update (
 	bigint,
 	bigint,
@@ -268,3 +269,45 @@ create or replace function core.reference_update (
 $$ language sql security definer;
 
 grant execute on function core.reference_update (bigint, bigint, core.reference_type_enum, integer) to cmdb;
+
+
+-- delete reference by object's ids and type
+-- Usage: core.reference_delete(object_id, new_reffed_object_id, type, role_id)
+-- Returns: new version number
+create or replace function core.reference_delete (
+	bigint,
+	bigint,
+	core.reference_type_enum,
+	integer
+) returns integer as $$
+	insert into core.references_archive (
+		object_id,
+		referenced_object_id,
+		reference_type,
+		version,
+		mtime,
+		modified_by_role_id
+	) select
+		object_id,
+		referenced_object_id,
+		reference_type,
+		version,
+		mtime,
+		$4
+	from core.references
+	where	object_id=$1 and
+		referenced_object_id=$2 and
+		reference_type=$3 and
+		locked_by_role_id is null or
+		locked_by_role_id=$4;
+
+	delete from core.references
+	where	object_id=$1 and
+		referenced_object_id=$2 and
+		reference_type=$3 and
+		locked_by_role_id is null or
+		locked_by_role_id=$4
+	returning version as version;
+$$ language sql security definer;
+
+grant execute on function core.reference_delete (bigint, bigint, core.reference_type_enum, integer) to cmdb;
