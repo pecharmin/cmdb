@@ -178,6 +178,29 @@ $$ language sql security definer;
 grant execute on function core.object_select (bigint) to cmdb;
 
 
+-- select object by tag name
+-- Usage: core.object_select_tag(name)
+-- Returns: row in core.objects table format
+create or replace function core.object_select_tag (
+	varchar(120)
+) returns table (
+	id			bigint,
+	value			bytea,
+	value_type		core.value_type_enum,
+	name			varchar(120),
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
+	select o.* from core.tags t
+	left join core.objects o on
+		t.object_id = o.id
+	where	t.name = $1;
+$$ language sql security definer;
+
+grant execute on function core.object_select_tag (varchar(120)) to cmdb;
+
+
 
 
 ---- reference handling
