@@ -6,3 +6,6 @@ SQL functions
 * general data modification and selection functions
 * select object tree by id with depth
 * delete cascade?
+
+Database schema extensions
+* add roles_membership_archive table for role group audit
