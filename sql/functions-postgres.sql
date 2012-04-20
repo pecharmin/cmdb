@@ -158,17 +158,17 @@ grant execute on function core.object_update (bigint, bytea, core.value_type_enu
 
 -- select object by id
 -- Usage: core.object_select(id)
--- Returns: row of core.objects table
+-- Returns: row in core.objects table format
 create or replace function core.object_select (
 	bigint
 ) returns table (
-	id bigint,
-	value bytea,
-	value_type core.value_type_enum,
-	name varchar(120),
-	version integer,
-	mtime timestamp without time zone,
-	locked_by_role_id integer
+	id			bigint,
+	value			bytea,
+	value_type		core.value_type_enum,
+	name			varchar(120),
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
 ) as $$
 	select * from core.objects
 	where	id=$1;
@@ -225,7 +225,7 @@ $$ language sql security definer;
 grant execute on function core.reference_insert (bigint, bigint, core.reference_type_enum, integer) to cmdb;
 
 
--- update reference by object's ids and type
+-- update reference (non root) by object's ids and type
 -- Usage: core.reference_update(object_id, new_refed_object_id, new_type, role_id)
 -- Returns: new referenced_object_id
 create or replace function core.reference_update (
@@ -271,6 +271,52 @@ $$ language sql security definer;
 grant execute on function core.reference_update (bigint, bigint, core.reference_type_enum, integer) to cmdb;
 
 
+-- update root reference by type
+-- Usage: core.reference_update(object_id, new_reffed_object_id, new_type, role_id)
+-- Returns: referenced_object_id
+create or replace function core.reference_update_root (
+	bigint,
+	bigint,
+	core.reference_type_enum,
+	integer
+) returns bigint as $$
+	insert into core.references_archive (
+		object_id,
+		referenced_object_id,
+		reference_type,
+		version,
+		mtime,
+		modified_by_role_id
+	) select
+		object_id,
+		referenced_object_id,
+		reference_type,
+		version,
+		mtime,
+		$4
+	from core.references
+	where	object_id=$1 and
+		referenced_object_id is null and
+		reference_type=$3 and
+		locked_by_role_id is null or
+		locked_by_role_id=$4;
+
+	update core.references set
+		referenced_object_id	= $2,
+		reference_type		= $3,
+		version			= version + 1,
+		mtime			= now()
+	where	object_id=$1 and
+		referenced_object_id is null and
+		reference_type=$3 and
+		locked_by_role_id is null or
+		locked_by_role_id=$4
+	returning referenced_object_id as referenced_object_id;
+$$ language sql security definer;
+
+grant execute on function core.reference_update_root (bigint, bigint, core.reference_type_enum, integer) to cmdb;
+
+
 -- delete reference by object's ids and type
 -- Usage: core.reference_delete(object_id, new_reffed_object_id, type, role_id)
 -- Returns: new version number
@@ -311,3 +357,46 @@ create or replace function core.reference_delete (
 $$ language sql security definer;
 
 grant execute on function core.reference_delete (bigint, bigint, core.reference_type_enum, integer) to cmdb;
+
+
+-- select references (non root) by refed object_id and type
+-- Usage: core.reference_select(reffed_object_id, type)
+-- Returns: rows in core.references table format
+create or replace function core.references_select (
+	bigint,
+	core.reference_type_enum
+) returns table (
+	object_id		bigint,
+	referenced_object_id	bigint,
+	reference_type		core.reference_type_enum,
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
+	select * from core.references
+	where	referenced_object_id = $1 and
+		reference_type = $2;
+$$ language sql security definer;
+
+grant execute on function core.references_select (bigint, core.reference_type_enum) to cmdb;
+
+
+-- select root references by type
+-- Usage: core.reference_select_roots(type)
+-- Returns: rows in core.references table format
+create or replace function core.references_select_root (
+	core.reference_type_enum
+) returns table (
+	object_id		bigint,
+	referenced_object_id	bigint,
+	reference_type		core.reference_type_enum,
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
+	select * from core.references
+	where	referenced_object_id is null and
+		reference_type = $1;
+$$ language sql security definer;
+
+grant execute on function core.references_select_root (core.reference_type_enum) to cmdb;
