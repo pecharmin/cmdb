@@ -201,6 +201,29 @@ $$ language sql security definer;
 grant execute on function core.object_select_tag (varchar(120)) to cmdb;
 
 
+-- select object by option name
+-- Usage: core.object_select_option(name)
+-- Returns: row in core.objects table format
+create or replace function core.object_select_option (
+	varchar(120)
+) returns table (
+	id			bigint,
+	value			bytea,
+	value_type		core.value_type_enum,
+	name			varchar(120),
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
+	select ob.* from core.options op
+	left join core.objects ob on
+		op.object_id = ob.id
+	where	op.name = $1;
+$$ language sql security definer;
+
+grant execute on function core.object_select_option (varchar(120)) to cmdb;
+
+
 
 
 ---- reference handling
@@ -429,6 +452,43 @@ grant execute on function core.references_select_root (core.reference_type_enum)
 
 
 
+---- option handling
+
+-- add option
+-- Usage: core.option_insert(name, object_id)
+-- Returns: object_id
+create or replace function core.option_insert (
+	varchar(120),
+	bigint
+) returns bigint as $$
+	insert into core.options (
+		name,
+		object_id
+	) values (
+		$1,
+		$2
+	) returning object_id as object_id;
+$$ language sql security definer;
+
+grant execute on function core.option_insert(varchar(120), bigint) to cmdb;
+
+
+-- delete option by name
+-- Usage: core.options_delete(name)
+-- Returns: old_option_object_id
+create or replace function core.option_delete (
+	varchar(120)
+) returns bigint as $$
+	delete from core.options
+		where name = $1
+	returning object_id as object_id;
+$$ language sql security definer;
+
+grant execute on function core.option_delete (varchar(120)) to cmdb;
+
+
+
+
 ---- tag handling
 
 -- add tag to an object
@@ -451,8 +511,8 @@ grant execute on function core.tag_insert(varchar(120), bigint) to cmdb;
 
 
 -- delete tag by name
--- Usage: core.tag_delete
--- Returns: old_taged_object_id
+-- Usage: core.tag_delete(name)
+-- Returns: old_tagged_object_id
 create or replace function core.tag_delete (
 	varchar(120)
 ) returns bigint as $$
