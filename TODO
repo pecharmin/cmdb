@@ -1,6 +1,8 @@
+CMDB TODO
+=========
+
 SQL functions
-* change FK contraint on references table
-* delete cascade?
-** NULL-Wert in Spalte referenced_object_id verletzt Not-Null-Constraint
+* check return values on update/delete function functions
 * general data modification and selection functions
 * select object tree by id with depth
+* delete cascade?
