@@ -92,7 +92,12 @@ create table core.references (
 	version			integer			not null,
 	mtime			timestamp		not null,
 	locked_by_role_id	integer			null		references core.roles (id) default null,
-	primary key(object_id, referenced_object_id, reference_type)
+	-- Note on this constraint: There can be multiple entries with the same object_id
+	-- and reference_type when referenced_object_id is null, cause NULL = NULL is NULL
+	-- and not true *. This does not harm the referential integrity because a null on
+	-- referenced_object_id means object_id is a root object.
+	-- * see http://archives.postgresql.org/pgsql-general/2010-04/msg00810.php
+	unique(object_id, referenced_object_id, reference_type)
 );
 
 -- references_archive - Archives all modified references
