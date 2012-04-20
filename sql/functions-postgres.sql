@@ -21,6 +21,7 @@
 \connect cmdb cmdb_admin
 
 
+
 ---- object handling
 
 -- insert object
@@ -175,6 +176,7 @@ create or replace function core.object_select (
 $$ language sql security definer;
 
 grant execute on function core.object_select (bigint) to cmdb;
+
 
 
 
@@ -400,3 +402,40 @@ create or replace function core.references_select_root (
 $$ language sql security definer;
 
 grant execute on function core.references_select_root (core.reference_type_enum) to cmdb;
+
+
+
+
+---- tag handling
+
+-- add tag to an object
+-- Usage: core.tag_insert(name, object_id)
+-- Returns: object_id
+create or replace function core.tag_insert (
+	varchar(120),
+	bigint
+) returns bigint as $$
+	insert into core.tags (
+		name,
+		object_id
+	) values (
+		$1,
+		$2
+	) returning object_id as object_id;
+$$ language sql security definer;
+
+grant execute on function core.tag_insert(varchar(120), bigint) to cmdb;
+
+
+-- delete tag by name
+-- Usage: core.tag_delete
+-- Returns: old_taged_object_id
+create or replace function core.tag_delete (
+	varchar(120)
+) returns bigint as $$
+	delete from core.tags
+		where name = $1
+	returning object_id as object_id;
+$$ language sql security definer;
+
+grant execute on function core.tag_delete (varchar(120)) to cmdb;
