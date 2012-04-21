@@ -545,7 +545,13 @@ create or replace function core.permission_delete (
 	bigint,
 	integer,
 	integer
-) returns bigint as $$
+) returns table (
+	object_id,
+	role_id,
+	permission,
+	mtime,
+	granted_by_role_id
+) as $$
 	insert into core.permissions_archive (
 		object_id,
 		role_id,
@@ -565,7 +571,12 @@ create or replace function core.permission_delete (
 	delete from core.permissions
 	where	object_id = $1 and
 		role_id = $2
-	returning object_id as object_id;
+	returning
+		object_id as object_id
+		role_id as role_id,
+		permission as permission,
+		mtime as mtime,
+		granted_by_role_id as granted_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.permission_delete (bigint, integer, integer) to cmdb;
@@ -600,14 +611,19 @@ grant execute on function core.permission_select (bigint) to cmdb;
 create or replace function core.option_insert (
 	varchar(120),
 	bigint
-) returns bigint as $$
+) returns table (
+	name		varchar(120),
+	object_id	bigint
+) as $$
 	insert into core.options (
 		name,
 		object_id
 	) values (
 		$1,
 		$2
-	) returning object_id as object_id;
+	) returning
+		name as name,
+		object_id as object_id;
 $$ language sql security definer;
 
 grant execute on function core.option_insert (varchar(120), bigint) to cmdb;
@@ -618,10 +634,15 @@ grant execute on function core.option_insert (varchar(120), bigint) to cmdb;
 -- Return: old_option_object_id
 create or replace function core.option_delete (
 	varchar(120)
-) returns bigint as $$
+) returns table (
+	name		varchar(120),
+	object_id	bigint
+) as $$
 	delete from core.options
 		where name = $1
-	returning object_id as object_id;
+	returning
+		name as name,
+		object_id as object_id;
 $$ language sql security definer;
 
 grant execute on function core.option_delete (varchar(120)) to cmdb;
@@ -667,14 +688,19 @@ grant execute on function core.option_select_all () to cmdb;
 create or replace function core.tag_insert (
 	varchar(120),
 	bigint
-) returns bigint as $$
+) returns table (
+	name		varchar(120),
+	object_id	bigint
+) as $$
 	insert into core.tags (
 		name,
 		object_id
 	) values (
 		$1,
 		$2
-	) returning object_id as object_id;
+	) returning
+		name as name,
+		object_id as object_id;
 $$ language sql security definer;
 
 grant execute on function core.tag_insert (varchar(120), bigint) to cmdb;
@@ -685,10 +711,15 @@ grant execute on function core.tag_insert (varchar(120), bigint) to cmdb;
 -- Return: old_tagged_object_id
 create or replace function core.tag_delete (
 	varchar(120)
-) returns bigint as $$
+) returns table (
+	name		varchar(120),
+	object_id	bigint
+) as $$
 	delete from core.tags
 		where name = $1
-	returning object_id as object_id;
+	returning
+		name as name,
+		object_id as object_id;
 $$ language sql security definer;
 
 grant execute on function core.tag_delete (varchar(120)) to cmdb;
@@ -740,7 +771,9 @@ create or replace function core.role_insert (
 		role_type
 	) values (
 		$1
-	) returning cast(lastval() as integer) as id, $1 as role_type;
+	) returning
+		cast(lastval() as integer) as id,
+		$1 as role_type;
 $$ language sql security definer;
 
 grant execute on function core.role_insert (core.role_type_enum) to cmdb;

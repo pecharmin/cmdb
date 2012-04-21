@@ -2,8 +2,9 @@ CMDB TODO
 =========
 
 SQL functions
-* check return values on update/delete function functions
+* functions should return the all rows of it's table
 * general data modification and selection functions
+* check return values on update/delete function functions
 * select object tree by id with depth
 * delete cascade?
 
