@@ -452,6 +452,127 @@ grant execute on function core.references_select_root (core.reference_type_enum)
 
 
 
+---- permission handling
+
+-- add permission
+-- Usage: core.permission_insert(object_id, role_id, permission, granted_by_role_id)
+-- Returns: object_id
+create or replace function core.permission_insert (
+	bigint,
+	integer,
+	smallint,
+	integer
+) returns bigint as $$
+	insert into core.permissions (
+		object_id,
+		role_id,
+		permission,
+		mtime,
+		granted_by_role_id
+	) values (
+		$1,
+		$2,
+		$3,
+		now(),
+		$4
+	);
+
+	insert into core.permissions_archive (
+		object_id,
+		role_id,
+		permission,
+		mtime,
+		granted_by_role_id
+	) select
+		object_id,
+		role_id,
+		permission,
+		mtime,
+		granted_by_role_id
+	from core.permissions
+	where	object_id = $1 and
+		role_id = $2
+	returning object_id as object_id;
+$$ language sql security definer;
+
+grant execute on function core.permission_insert (bigint, integer, smallint, integer) to cmdb;
+
+
+-- update permission
+-- Usage: core.permission_update(object_id, role_id, changed_by_role_id)
+-- Returns: object_id
+create or replace function core.permission_update (
+	bigint,
+	integer,
+	smallint,
+	integer
+) returns bigint as $$
+	insert into core.permissions_archive (
+		object_id,
+		role_id,
+		permission,
+		mtime,
+		granted_by_role_id
+	) select
+		object_id,
+		role_id,
+		permission,
+		mtime,
+		granted_by_role_id
+	from core.permissions
+	where	object_id = $1 and
+		role_id = $2;
+
+	update core.permissions set
+		object_id		= $1,
+		role_id			= $2,
+		permission		= $3,
+		mtime			= now(),
+		granted_by_role_id	= $4
+	where	object_id = $1 and
+		role_id	= $2
+	returning object_id as object_id;
+
+$$ language sql security definer;
+
+grant execute on function core.permission_update (bigint, integer, smallint, integer) to cmdb;
+
+
+-- delete permission
+-- Usage: core.permission_delete(object_id, role_id, deleted_by_role_id)
+-- Returns: object_id
+create or replace function core.permission_delete (
+	bigint,
+	integer,
+	integer
+) returns bigint as $$
+	insert into core.permissions_archive (
+		object_id,
+		role_id,
+		permission,
+		mtime,
+		granted_by_role_id
+	) select
+		object_id,
+		role_id,
+		permission,
+		mtime,
+		$3
+	from core.permissions
+	where	object_id = $1 and
+		role_id = $2;
+
+	delete from core.permissions
+	where	object_id = $1 and
+		role_id = $2
+	returning object_id as object_id;
+$$ language sql security definer;
+
+grant execute on function core.permission_delete (bigint, integer, integer) to cmdb;
+
+
+
+
 ---- option handling
 
 -- add option
