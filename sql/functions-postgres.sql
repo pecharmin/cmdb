@@ -587,7 +587,7 @@ create or replace function core.permission_select (
 	where	object_id = $1;
 $$ language sql security definer;
 
-grant execute on function core.permission_select(bigint) to cmdb;
+grant execute on function core.permission_select (bigint) to cmdb;
 
 
 
@@ -610,7 +610,7 @@ create or replace function core.option_insert (
 	) returning object_id as object_id;
 $$ language sql security definer;
 
-grant execute on function core.option_insert(varchar(120), bigint) to cmdb;
+grant execute on function core.option_insert (varchar(120), bigint) to cmdb;
 
 
 -- delete option by name
@@ -640,7 +640,7 @@ create or replace function core.option_select(
 	where	name = $1;
 $$ language sql security definer;
 
-grant execute on function core.option_select(varchar(120)) to cmdb;
+grant execute on function core.option_select (varchar(120)) to cmdb;
 
 
 -- select all options
@@ -654,7 +654,7 @@ create or replace function core.option_select_all(
 	select * from core.options;
 $$ language sql security definer;
 
-grant execute on function core.option_select_all() to cmdb;
+grant execute on function core.option_select_all () to cmdb;
 
 
 
@@ -677,7 +677,7 @@ create or replace function core.tag_insert (
 	) returning object_id as object_id;
 $$ language sql security definer;
 
-grant execute on function core.tag_insert(varchar(120), bigint) to cmdb;
+grant execute on function core.tag_insert (varchar(120), bigint) to cmdb;
 
 
 -- delete tag by name
@@ -707,7 +707,7 @@ create or replace function core.tag_select(
 	where	name = $1;
 $$ language sql security definer;
 
-grant execute on function core.tag_select(varchar(120)) to cmdb;
+grant execute on function core.tag_select (varchar(120)) to cmdb;
 
 
 -- display all tags
@@ -721,4 +721,40 @@ create or replace function core.tag_select_all (
 	select * from core.tags;
 $$ language sql security definer;
 
-grant execute on function core.tag_select_all() to cmdb;
+grant execute on function core.tag_select_all () to cmdb;
+
+
+
+
+---- role & membership handling
+
+-- insert new role
+-- Usage: core.role_insert(type)
+create or replace function core.role_insert (
+	core.role_type_enum
+) returns table (
+	id		integer,
+	role_type	core.role_type_enum
+) as $$
+	insert into core.roles (
+		role_type
+	) values (
+		$1
+	) returning cast(lastval() as integer) as id, $1 as role_type;
+$$ language sql security definer;
+
+grant execute on function core.role_insert (core.role_type_enum) to cmdb;
+
+-- select role by id
+-- Usage: core.role_select(id)
+create or replace function core.role_select (
+	integer
+) returns table (
+	id		integer,
+	role_type	core.role_type_enum
+) as $$
+	select * from core.roles
+	where	id = $1;
+$$ language sql security definer;
+
+grant execute on function core.role_select (integer) to cmdb;
