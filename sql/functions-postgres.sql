@@ -26,13 +26,20 @@
 
 -- insert object
 -- Usage: core.object_insert (value, value_type, name, role_id)
--- Return: id of new object
 create or replace function core.object_insert (
 	bytea,
 	core.value_type_enum,
 	varchar(120),
 	integer
-) returns bigint as $$
+) returns table (
+	id			bigint,
+	value			bytea,
+	value_type		core.value_type_enum,
+	name			varchar(120),
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
 	insert into core.objects (
 		value,
 		value_type,
@@ -67,7 +74,14 @@ create or replace function core.object_insert (
 		$4
 	from core.objects
 	where	id=lastval()
-	returning lastval() as id;
+	returning
+		lastval() as id,
+		value as value,
+		value_type as value_type,
+		name as name,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.object_insert (bytea, core.value_type_enum, varchar(120), integer) to cmdb;
@@ -75,11 +89,18 @@ grant execute on function core.object_insert (bytea, core.value_type_enum, varch
 
 -- delete object by id
 -- Usage: core.object_delete(id, role_id)
--- Return: version of deleted object
 create or replace function core.object_delete (
 	bigint,
 	integer
-) returns integer as $$
+) returns table (
+	id			bigint,
+	value			bytea,
+	value_type		core.value_type_enum,
+	name			varchar(120),
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
 	insert into core.objects_archive (
 		id,
 		value,
@@ -105,7 +126,14 @@ create or replace function core.object_delete (
 	where	id=$1 and
 		locked_by_role_id is null or
 		locked_by_role_id=$2
-	returning version as version;
+	returning
+		id as id,
+		value as value,
+		value_type as value_type,
+		name as name,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.object_delete (bigint, integer) to cmdb;
@@ -113,14 +141,21 @@ grant execute on function core.object_delete (bigint, integer) to cmdb;
 
 -- update object by id
 -- Usage: core.object_update(id, value, value_type, name, role_id)
--- Return: version of new object
 create or replace function core.object_update (
 	bigint,
 	bytea,
 	core.value_type_enum,
 	varchar(120),
 	integer
-) returns integer as $$
+) returns table (
+	id			bigint,
+	value			bytea,
+	value_type		core.value_type_enum,
+	name			varchar(120),
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
 	insert into core.objects_archive (
 		id,
 		value,
@@ -151,7 +186,14 @@ create or replace function core.object_update (
 	where	id=$1 and
 		locked_by_role_id is null or
 		locked_by_role_id=$5
-	returning version as version;
+	returning
+		id as id,
+		value as value,
+		value_type as value_type,
+		name as name,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.object_update (bigint, bytea, core.value_type_enum, varchar(120), integer) to cmdb;
@@ -159,7 +201,6 @@ grant execute on function core.object_update (bigint, bytea, core.value_type_enu
 
 -- select object by id
 -- Usage: core.object_select(id)
--- Return: row in core.objects table format
 create or replace function core.object_select (
 	bigint
 ) returns table (
@@ -180,7 +221,6 @@ grant execute on function core.object_select (bigint) to cmdb;
 
 -- select object by tag name
 -- Usage: core.object_select_tag(name)
--- Return: row in core.objects table format
 create or replace function core.object_select_tag (
 	varchar(120)
 ) returns table (
@@ -203,7 +243,6 @@ grant execute on function core.object_select_tag (varchar(120)) to cmdb;
 
 -- select object by option name
 -- Usage: core.object_select_option(name)
--- Return: row in core.objects table format
 create or replace function core.object_select_option (
 	varchar(120)
 ) returns table (
@@ -230,13 +269,19 @@ grant execute on function core.object_select_option (varchar(120)) to cmdb;
 
 -- insert reference
 -- Usage: core.reference_insert(object_id, refed_object_id, type, role_id)
--- Return: object_id
 create or replace function core.reference_insert (
 	bigint,
 	bigint,
 	core.reference_type_enum,
 	integer
-) returns bigint as $$
+) returns table (
+	object_id		bigint,
+	referenced_object_id	bigint,
+	reference_type		core.reference_type_enum,
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
 	insert into core.references (
 		object_id,
 		referenced_object_id,
@@ -267,7 +312,13 @@ create or replace function core.reference_insert (
 		0,
 		now(),
 		$4
-	) returning object_id as object_id;
+	) returning
+		object_id as object_id,
+		referenced_object_id as referenced_object_id,
+		reference_type as reference_type,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.reference_insert (bigint, bigint, core.reference_type_enum, integer) to cmdb;
@@ -275,13 +326,19 @@ grant execute on function core.reference_insert (bigint, bigint, core.reference_
 
 -- update reference (non root) by object's ids and type
 -- Usage: core.reference_update(object_id, new_refed_object_id, new_type, role_id)
--- Return: new referenced_object_id
 create or replace function core.reference_update (
 	bigint,
 	bigint,
 	core.reference_type_enum,
 	integer
-) returns bigint as $$
+) returns table (
+	object_id		bigint,
+	referenced_object_id	bigint,
+	reference_type		core.reference_type_enum,
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
 	insert into core.references_archive (
 		object_id,
 		referenced_object_id,
@@ -313,7 +370,13 @@ create or replace function core.reference_update (
 		reference_type=$3 and
 		locked_by_role_id is null or
 		locked_by_role_id=$4
-	returning referenced_object_id as referenced_object_id;
+	returning
+		object_id as object_id,
+		referenced_object_id as referenced_object_id,
+		reference_type as reference_type,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.reference_update (bigint, bigint, core.reference_type_enum, integer) to cmdb;
@@ -321,13 +384,19 @@ grant execute on function core.reference_update (bigint, bigint, core.reference_
 
 -- update root reference by type
 -- Usage: core.reference_update(object_id, new_reffed_object_id, new_type, role_id)
--- Return: referenced_object_id
 create or replace function core.reference_update_root (
 	bigint,
 	bigint,
 	core.reference_type_enum,
 	integer
-) returns bigint as $$
+) returns table (
+	object_id		bigint,
+	referenced_object_id	bigint,
+	reference_type		core.reference_type_enum,
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
 	insert into core.references_archive (
 		object_id,
 		referenced_object_id,
@@ -359,7 +428,13 @@ create or replace function core.reference_update_root (
 		reference_type=$3 and
 		locked_by_role_id is null or
 		locked_by_role_id=$4
-	returning referenced_object_id as referenced_object_id;
+	returning
+		object_id as object_id,
+		referenced_object_id as referenced_object_id,
+		reference_type as reference_type,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.reference_update_root (bigint, bigint, core.reference_type_enum, integer) to cmdb;
@@ -367,13 +442,19 @@ grant execute on function core.reference_update_root (bigint, bigint, core.refer
 
 -- delete reference by object's ids and type
 -- Usage: core.reference_delete(object_id, new_reffed_object_id, type, role_id)
--- Return: new version number
 create or replace function core.reference_delete (
 	bigint,
 	bigint,
 	core.reference_type_enum,
 	integer
-) returns integer as $$
+) returns table (
+	object_id		bigint,
+	referenced_object_id	bigint,
+	reference_type		core.reference_type_enum,
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
 	insert into core.references_archive (
 		object_id,
 		referenced_object_id,
@@ -401,7 +482,13 @@ create or replace function core.reference_delete (
 		reference_type=$3 and
 		locked_by_role_id is null or
 		locked_by_role_id=$4
-	returning version as version;
+	returning
+		object_id as object_id,
+		referenced_object_id as referenced_object_id,
+		reference_type as reference_type,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.reference_delete (bigint, bigint, core.reference_type_enum, integer) to cmdb;
@@ -409,7 +496,6 @@ grant execute on function core.reference_delete (bigint, bigint, core.reference_
 
 -- select references (non root) by refed object_id and type
 -- Usage: core.reference_select(reffed_object_id, type)
--- Return: rows in core.references table format
 create or replace function core.references_select (
 	bigint,
 	core.reference_type_enum
@@ -431,7 +517,6 @@ grant execute on function core.references_select (bigint, core.reference_type_en
 
 -- select root references by type
 -- Usage: core.reference_select_roots(type)
--- Return: rows in core.references table format
 create or replace function core.references_select_root (
 	core.reference_type_enum
 ) returns table (
@@ -456,13 +541,18 @@ grant execute on function core.references_select_root (core.reference_type_enum)
 
 -- add permission
 -- Usage: core.permission_insert(object_id, role_id, permission, granted_by_role_id)
--- Return: object_id
 create or replace function core.permission_insert (
 	bigint,
 	integer,
 	smallint,
 	integer
-) returns bigint as $$
+) returns table (
+	object_id,
+	role_id,
+	permission,
+	mtime,
+	granted_by_role_id
+) as $$
 	insert into core.permissions (
 		object_id,
 		role_id,
@@ -492,7 +582,12 @@ create or replace function core.permission_insert (
 	from core.permissions
 	where	object_id = $1 and
 		role_id = $2
-	returning object_id as object_id;
+	returning
+		object_id as object_id
+		role_id as role_id,
+		permission as permission,
+		mtime as mtime,
+		granted_by_role_id as granted_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.permission_insert (bigint, integer, smallint, integer) to cmdb;
@@ -500,13 +595,18 @@ grant execute on function core.permission_insert (bigint, integer, smallint, int
 
 -- update permission
 -- Usage: core.permission_update(object_id, role_id, changed_by_role_id)
--- Return: object_id
 create or replace function core.permission_update (
 	bigint,
 	integer,
 	smallint,
 	integer
-) returns bigint as $$
+) returns table (
+	object_id,
+	role_id,
+	permission,
+	mtime,
+	granted_by_role_id
+) as $$
 	insert into core.permissions_archive (
 		object_id,
 		role_id,
@@ -531,8 +631,12 @@ create or replace function core.permission_update (
 		granted_by_role_id	= $4
 	where	object_id = $1 and
 		role_id	= $2
-	returning object_id as object_id;
-
+	returning
+		object_id as object_id
+		role_id as role_id,
+		permission as permission,
+		mtime as mtime,
+		granted_by_role_id as granted_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.permission_update (bigint, integer, smallint, integer) to cmdb;
@@ -540,7 +644,6 @@ grant execute on function core.permission_update (bigint, integer, smallint, int
 
 -- delete permission
 -- Usage: core.permission_delete(object_id, role_id, deleted_by_role_id)
--- Return: object_id
 create or replace function core.permission_delete (
 	bigint,
 	integer,
@@ -607,7 +710,6 @@ grant execute on function core.permission_select (bigint) to cmdb;
 
 -- add option
 -- Usage: core.option_insert(name, object_id)
--- Return: object_id
 create or replace function core.option_insert (
 	varchar(120),
 	bigint
@@ -631,7 +733,6 @@ grant execute on function core.option_insert (varchar(120), bigint) to cmdb;
 
 -- delete option by name
 -- Usage: core.options_delete(name)
--- Return: old_option_object_id
 create or replace function core.option_delete (
 	varchar(120)
 ) returns table (
@@ -650,7 +751,6 @@ grant execute on function core.option_delete (varchar(120)) to cmdb;
 
 -- select option by name
 -- Usage: core.option_select(name)
--- Return: row in core.options table format
 create or replace function core.option_select(
 	varchar(120)
 ) returns table (
@@ -666,7 +766,6 @@ grant execute on function core.option_select (varchar(120)) to cmdb;
 
 -- select all options
 -- Usage: core.option_select_all()
--- Return: all rows in core.options table format
 create or replace function core.option_select_all(
 ) returns table (
 	name		varchar(120),
@@ -684,7 +783,6 @@ grant execute on function core.option_select_all () to cmdb;
 
 -- add tag to an object
 -- Usage: core.tag_insert(name, object_id)
--- Return: object_id
 create or replace function core.tag_insert (
 	varchar(120),
 	bigint
@@ -708,7 +806,6 @@ grant execute on function core.tag_insert (varchar(120), bigint) to cmdb;
 
 -- delete tag by name
 -- Usage: core.tag_delete(name)
--- Return: old_tagged_object_id
 create or replace function core.tag_delete (
 	varchar(120)
 ) returns table (
@@ -727,7 +824,6 @@ grant execute on function core.tag_delete (varchar(120)) to cmdb;
 
 -- select tag by name
 -- Usage: core.tag_select(tag_name)
--- Return: row in core.tags table format
 create or replace function core.tag_select(
 	varchar(120)
 ) returns table (
@@ -743,7 +839,6 @@ grant execute on function core.tag_select (varchar(120)) to cmdb;
 
 -- display all tags
 -- Usage: core.tag_select_all()
--- Return: all rows in core.tags table formar
 create or replace function core.tag_select_all (
 ) returns table (
 	name		varchar(120),
