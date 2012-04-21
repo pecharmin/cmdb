@@ -26,7 +26,7 @@
 
 -- insert object
 -- Usage: core.object_insert (value, value_type, name, role_id)
--- Returns: id of new object
+-- Return: id of new object
 create or replace function core.object_insert (
 	bytea,
 	core.value_type_enum,
@@ -75,7 +75,7 @@ grant execute on function core.object_insert (bytea, core.value_type_enum, varch
 
 -- delete object by id
 -- Usage: core.object_delete(id, role_id)
--- Returns: version of deleted object
+-- Return: version of deleted object
 create or replace function core.object_delete (
 	bigint,
 	integer
@@ -113,7 +113,7 @@ grant execute on function core.object_delete (bigint, integer) to cmdb;
 
 -- update object by id
 -- Usage: core.object_update(id, value, value_type, name, role_id)
--- Returns: version of new object
+-- Return: version of new object
 create or replace function core.object_update (
 	bigint,
 	bytea,
@@ -159,7 +159,7 @@ grant execute on function core.object_update (bigint, bytea, core.value_type_enu
 
 -- select object by id
 -- Usage: core.object_select(id)
--- Returns: row in core.objects table format
+-- Return: row in core.objects table format
 create or replace function core.object_select (
 	bigint
 ) returns table (
@@ -180,7 +180,7 @@ grant execute on function core.object_select (bigint) to cmdb;
 
 -- select object by tag name
 -- Usage: core.object_select_tag(name)
--- Returns: row in core.objects table format
+-- Return: row in core.objects table format
 create or replace function core.object_select_tag (
 	varchar(120)
 ) returns table (
@@ -203,7 +203,7 @@ grant execute on function core.object_select_tag (varchar(120)) to cmdb;
 
 -- select object by option name
 -- Usage: core.object_select_option(name)
--- Returns: row in core.objects table format
+-- Return: row in core.objects table format
 create or replace function core.object_select_option (
 	varchar(120)
 ) returns table (
@@ -230,7 +230,7 @@ grant execute on function core.object_select_option (varchar(120)) to cmdb;
 
 -- insert reference
 -- Usage: core.reference_insert(object_id, refed_object_id, type, role_id)
--- Returns: object_id
+-- Return: object_id
 create or replace function core.reference_insert (
 	bigint,
 	bigint,
@@ -275,7 +275,7 @@ grant execute on function core.reference_insert (bigint, bigint, core.reference_
 
 -- update reference (non root) by object's ids and type
 -- Usage: core.reference_update(object_id, new_refed_object_id, new_type, role_id)
--- Returns: new referenced_object_id
+-- Return: new referenced_object_id
 create or replace function core.reference_update (
 	bigint,
 	bigint,
@@ -321,7 +321,7 @@ grant execute on function core.reference_update (bigint, bigint, core.reference_
 
 -- update root reference by type
 -- Usage: core.reference_update(object_id, new_reffed_object_id, new_type, role_id)
--- Returns: referenced_object_id
+-- Return: referenced_object_id
 create or replace function core.reference_update_root (
 	bigint,
 	bigint,
@@ -367,7 +367,7 @@ grant execute on function core.reference_update_root (bigint, bigint, core.refer
 
 -- delete reference by object's ids and type
 -- Usage: core.reference_delete(object_id, new_reffed_object_id, type, role_id)
--- Returns: new version number
+-- Return: new version number
 create or replace function core.reference_delete (
 	bigint,
 	bigint,
@@ -409,7 +409,7 @@ grant execute on function core.reference_delete (bigint, bigint, core.reference_
 
 -- select references (non root) by refed object_id and type
 -- Usage: core.reference_select(reffed_object_id, type)
--- Returns: rows in core.references table format
+-- Return: rows in core.references table format
 create or replace function core.references_select (
 	bigint,
 	core.reference_type_enum
@@ -431,7 +431,7 @@ grant execute on function core.references_select (bigint, core.reference_type_en
 
 -- select root references by type
 -- Usage: core.reference_select_roots(type)
--- Returns: rows in core.references table format
+-- Return: rows in core.references table format
 create or replace function core.references_select_root (
 	core.reference_type_enum
 ) returns table (
@@ -456,7 +456,7 @@ grant execute on function core.references_select_root (core.reference_type_enum)
 
 -- add permission
 -- Usage: core.permission_insert(object_id, role_id, permission, granted_by_role_id)
--- Returns: object_id
+-- Return: object_id
 create or replace function core.permission_insert (
 	bigint,
 	integer,
@@ -500,7 +500,7 @@ grant execute on function core.permission_insert (bigint, integer, smallint, int
 
 -- update permission
 -- Usage: core.permission_update(object_id, role_id, changed_by_role_id)
--- Returns: object_id
+-- Return: object_id
 create or replace function core.permission_update (
 	bigint,
 	integer,
@@ -540,7 +540,7 @@ grant execute on function core.permission_update (bigint, integer, smallint, int
 
 -- delete permission
 -- Usage: core.permission_delete(object_id, role_id, deleted_by_role_id)
--- Returns: object_id
+-- Return: object_id
 create or replace function core.permission_delete (
 	bigint,
 	integer,
@@ -571,13 +571,32 @@ $$ language sql security definer;
 grant execute on function core.permission_delete (bigint, integer, integer) to cmdb;
 
 
+-- select permission by object_id
+-- Usage: core.permission_select(object_id)
+-- Return: row in core.permissions table format
+create or replace function core.permission_select (
+	bigint
+) returns table (
+	object_id		bigint,
+	role_id			integer,
+	permission		smallint,
+	mtime			timestamp without time zone,
+	granted_by_role_id	integer
+) as $$
+	select * from core.permissions
+	where	object_id = $1;
+$$ language sql security definer;
+
+grant execute on function core.permission_select(bigint) to cmdb;
+
+
 
 
 ---- option handling
 
 -- add option
 -- Usage: core.option_insert(name, object_id)
--- Returns: object_id
+-- Return: object_id
 create or replace function core.option_insert (
 	varchar(120),
 	bigint
@@ -596,7 +615,7 @@ grant execute on function core.option_insert(varchar(120), bigint) to cmdb;
 
 -- delete option by name
 -- Usage: core.options_delete(name)
--- Returns: old_option_object_id
+-- Return: old_option_object_id
 create or replace function core.option_delete (
 	varchar(120)
 ) returns bigint as $$
@@ -608,13 +627,43 @@ $$ language sql security definer;
 grant execute on function core.option_delete (varchar(120)) to cmdb;
 
 
+-- select option by name
+-- Usage: core.option_select(name)
+-- Return: row in core.options table format
+create or replace function core.option_select(
+	varchar(120)
+) returns table (
+	name		varchar(120),
+	object_id	bigint
+) as $$
+	select * from core.options
+	where	name = $1;
+$$ language sql security definer;
+
+grant execute on function core.option_select(varchar(120)) to cmdb;
+
+
+-- select all options
+-- Usage: core.option_select_all()
+-- Return: all rows in core.options table format
+create or replace function core.option_select_all(
+) returns table (
+	name		varchar(120),
+	object_id	bigint
+) as $$
+	select * from core.options;
+$$ language sql security definer;
+
+grant execute on function core.option_select_all() to cmdb;
+
+
 
 
 ---- tag handling
 
 -- add tag to an object
 -- Usage: core.tag_insert(name, object_id)
--- Returns: object_id
+-- Return: object_id
 create or replace function core.tag_insert (
 	varchar(120),
 	bigint
@@ -633,7 +682,7 @@ grant execute on function core.tag_insert(varchar(120), bigint) to cmdb;
 
 -- delete tag by name
 -- Usage: core.tag_delete(name)
--- Returns: old_tagged_object_id
+-- Return: old_tagged_object_id
 create or replace function core.tag_delete (
 	varchar(120)
 ) returns bigint as $$
@@ -643,3 +692,33 @@ create or replace function core.tag_delete (
 $$ language sql security definer;
 
 grant execute on function core.tag_delete (varchar(120)) to cmdb;
+
+
+-- select tag by name
+-- Usage: core.tag_select(tag_name)
+-- Return: row in core.tags table format
+create or replace function core.tag_select(
+	varchar(120)
+) returns table (
+	name		varchar(120),
+	object_id	bigint
+) as $$
+	select * from core.tags
+	where	name = $1;
+$$ language sql security definer;
+
+grant execute on function core.tag_select(varchar(120)) to cmdb;
+
+
+-- display all tags
+-- Usage: core.tag_select_all()
+-- Return: all rows in core.tags table formar
+create or replace function core.tag_select_all (
+) returns table (
+	name		varchar(120),
+	object_id	bigint
+) as $$
+	select * from core.tags;
+$$ language sql security definer;
+
+grant execute on function core.tag_select_all() to cmdb;
