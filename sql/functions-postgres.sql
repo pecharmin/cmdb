@@ -887,7 +887,7 @@ create or replace function core.role_insert (
 		created_by_role_id as created_by_role_id;
 $$ language sql security definer;
 
-grant execute on function core.role_insert (core.role_type_enum) to cmdb;
+grant execute on function core.role_insert (core.role_type_enum, integer) to cmdb;
 
 -- select role by id
 -- Usage: core.role_select(id)
