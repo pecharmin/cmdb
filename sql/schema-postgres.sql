@@ -70,6 +70,8 @@ create table core.roles_membership (
 	-- time role granted
 	gtime			timestamp		not null,
 	granted_by_role_id	integer			not null	references core.roles (id),
+	-- a role should only be granted one time to a role
+	primary key (role_id, granted_role_id),
 	-- application user 'system' with id 0 must not be granted
 	check(granted_role_id != 0)
 );
