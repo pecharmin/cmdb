@@ -42,22 +42,45 @@ grant usage on schema core to cmdb;
 create type core.value_type_enum as enum ('object', 'integer', 'double', 'text', 'blob');
 
 -- role type definition for roles
-create type core.role_type_enum as enum ('user', 'group');
+create type core.role_type_enum as enum ('user', 'group', 'system');
 
 -- reference type definition for references table
 create type core.reference_type_enum as enum ('parent', 'link');
+
+--grant type for role membership audit in archive table
+create type core.grant_type_enum as enum ('grant', 'revoke');
+
 
 
 -- roles - Defines users and groups as roles for permission handling
 create table core.roles (
 	id			serial			not null	primary key,
-	role_type		core.role_type_enum	not null
+	role_type		core.role_type_enum	not null,
+	ctime			timestamp		not null,
+	created_by_role_id	integer			not null	references core.roles (id)
 );
+
+-- create application system user - TODO: move to initial data insert sql script
+insert into core.roles (id, role_type, ctime, created_by_role_id) values (0, 'system', now(), 0);
 
 -- roles_membership - Assigns roles to roles like grouping or user cloning
 create table core.roles_membership (
 	role_id			integer			not null	references core.roles (id),
-	granted_role_id		integer			not null	references core.roles (id)
+	granted_role_id		integer			not null	references core.roles (id),
+	-- time role granted
+	gtime			timestamp		not null,
+	granted_by_role_id	integer			not null	references core.roles (id),
+	-- application user 'system' with id 0 must not be granted
+	check(granted_role_id != 0)
+);
+
+-- roles_membership_archive - Achives granted roles
+create table core.roles_membership_archive (
+	role_id			integer			not null,
+	granted_role_id		integer			not null,
+	gtime			timestamp		not null,
+	granted_by_role_id	integer			not null,
+	grant_type		core.grant_type_enum	not null
 );
 
 
