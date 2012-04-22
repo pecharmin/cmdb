@@ -862,20 +862,29 @@ grant execute on function core.tag_select_all () to cmdb;
 ---- role & membership handling
 
 -- insert new role
--- Usage: core.role_insert(type)
+-- Usage: core.role_insert(type, created_by_role_id)
 create or replace function core.role_insert (
-	core.role_type_enum
+	core.role_type_enum,
+	integer
 ) returns table (
-	id		integer,
-	role_type	core.role_type_enum
+	id			integer,
+	role_type		core.role_type_enum,
+	ctime			timestamp without time zone,
+	created_by_role_id	integer
 ) as $$
 	insert into core.roles (
-		role_type
+		role_type,
+		ctime,
+		created_by_role_id
 	) values (
-		$1
+		$1,
+		now(),
+		$2
 	) returning
 		cast(lastval() as integer) as id,
-		$1 as role_type;
+		$1 as role_type,
+		ctime as ctime,
+		created_by_role_id as created_by_role_id;
 $$ language sql security definer;
 
 grant execute on function core.role_insert (core.role_type_enum) to cmdb;
@@ -885,11 +894,120 @@ grant execute on function core.role_insert (core.role_type_enum) to cmdb;
 create or replace function core.role_select (
 	integer
 ) returns table (
-	id		integer,
-	role_type	core.role_type_enum
+	id			integer,
+	role_type		core.role_type_enum,
+	ctime			timestamp without time zone,
+	created_by_role_id	integer
 ) as $$
 	select * from core.roles
 	where	id = $1;
 $$ language sql security definer;
 
 grant execute on function core.role_select (integer) to cmdb;
+
+
+-- grant role to role
+-- Usage: core.role_membership_insert(role_id, granted_role_id, granted_by_role_id)
+create or replace function core.role_membership_insert (
+	integer,
+	integer,
+	integer
+) returns table (
+	role_id			integer,
+	granted_role_id		integer,
+	gtime			timestamp without time zone,
+	granted_by_role_id	integer
+) as $$
+	insert into core.roles_membership (
+		role_id,
+		granted_role_id,
+		gtime,
+		granted_by_role_id
+	) values (
+		$1,
+		$2,
+		now(),
+		$3
+	);
+
+	insert into core.roles_membership_archive (
+		role_id,
+		granted_role_id,
+		gtime,
+		granted_by_role_id,
+		grant_type
+	) select
+		role_id,
+		granted_role_id,
+		gtime,
+		granted_by_role_id,
+		'grant'
+	from core.roles_membership
+	where	role_id = $1 and
+		granted_role_id = $2
+	returning
+		role_id as role_id,
+		granted_role_id as granted_role_id,
+		gtime as gtime,
+		granted_by_role_id as granted_by_role_id;
+$$ language sql security definer;
+
+grant execute on function core.role_membership_insert (integer, integer, integer) to cmdb;
+
+
+-- revoke role from role
+-- Usage: core.role_membership_delete(role_id, revoked_role_id, granted_by_role_id)
+create or replace function core.role_membership_delete (
+	integer,
+	integer,
+	integer
+) returns table (
+	role_id			integer,
+	granted_role_id		integer,
+	gtime			timestamp without time zone,
+	granted_by_role_id	integer
+) as $$
+	insert into core.roles_membership_archive (
+		role_id,
+		granted_role_id,
+		gtime,
+		granted_by_role_id,
+		grant_type
+	) select
+		role_id,
+		granted_role_id,
+		gtime,
+		$3,
+		'revoke'
+	from core.roles_membership
+	where	role_id = $1 and
+		granted_role_id = $2;
+
+	delete from core.roles_membership
+	where	role_id = $1 and
+		granted_role_id = $2
+	returning
+		role_id as role_id,
+		granted_role_id as granted_role_id,
+		gtime as gtime,
+		granted_by_role_id as granted_by_role_id;
+$$ language sql security definer;
+
+grant execute on function core.role_membership_delete (integer, integer, integer) to cmdb;
+
+
+-- selects all granted roles of a role
+-- Usage: core.role_membership_select(role_id)
+create or replace function core.role_membership_select (
+	integer
+) returns table (
+	role_id			integer,
+	granted_role_id		integer,
+	gtime			timestamp without time zone,
+	granted_by_role_id	integer
+) as $$
+	select * from core.roles_membership
+	where	role_id = $1;
+$$ language sql security definer;
+
+grant execute on function core.role_membership_select (integer) to cmdb;
