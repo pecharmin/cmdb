@@ -73,15 +73,17 @@ create or replace function core.object_insert (
 		mtime,
 		$4
 	from core.objects
-	where	id=lastval()
-	returning
-		lastval() as id,
-		value as value,
-		value_type as value_type,
-		name as name,
-		version as version,
-		mtime as mtime,
-		locked_by_role_id as locked_by_role_id;
+	where	id=lastval();
+	select
+		id,
+		value,
+		value_type,
+		name,
+		version,
+		mtime,
+		locked_by_role_id
+	from core.objects
+	where	id=lastval();
 $$ language sql security definer;
 
 grant execute on function core.object_insert (bytea, core.value_type_enum, varchar(120), integer) to cmdb;
@@ -312,13 +314,18 @@ create or replace function core.reference_insert (
 		0,
 		now(),
 		$4
-	) returning
-		object_id as object_id,
-		referenced_object_id as referenced_object_id,
-		reference_type as reference_type,
-		version as version,
-		mtime as mtime,
-		locked_by_role_id as locked_by_role_id;
+	);
+	select
+		object_id,
+		referenced_object_id,
+		reference_type,
+		version,
+		mtime,
+		locked_by_role_id
+	from core.references
+	where	object_id=$1 and
+		referenced_object_id=$2 and
+		reference_type=$3;
 $$ language sql security definer;
 
 grant execute on function core.reference_insert (bigint, bigint, core.reference_type_enum, integer) to cmdb;
@@ -547,11 +554,11 @@ create or replace function core.permission_insert (
 	smallint,
 	integer
 ) returns table (
-	object_id,
-	role_id,
-	permission,
-	mtime,
-	granted_by_role_id
+	object_id		bigint,
+	role_id			integer,
+	permission		smallint,
+	mtime			timestamp without time zone,
+	granted_by_role_id	integer
 ) as $$
 	insert into core.permissions (
 		object_id,
@@ -583,7 +590,7 @@ create or replace function core.permission_insert (
 	where	object_id = $1 and
 		role_id = $2
 	returning
-		object_id as object_id
+		object_id as object_id,
 		role_id as role_id,
 		permission as permission,
 		mtime as mtime,
@@ -601,11 +608,11 @@ create or replace function core.permission_update (
 	smallint,
 	integer
 ) returns table (
-	object_id,
-	role_id,
-	permission,
-	mtime,
-	granted_by_role_id
+	object_id		bigint,
+	role_id			integer,
+	permission		smallint,
+	mtime			timestamp without time zone,
+	granted_by_role_id	integer
 ) as $$
 	insert into core.permissions_archive (
 		object_id,
@@ -632,7 +639,7 @@ create or replace function core.permission_update (
 	where	object_id = $1 and
 		role_id	= $2
 	returning
-		object_id as object_id
+		object_id as object_id,
 		role_id as role_id,
 		permission as permission,
 		mtime as mtime,
@@ -649,11 +656,11 @@ create or replace function core.permission_delete (
 	integer,
 	integer
 ) returns table (
-	object_id,
-	role_id,
-	permission,
-	mtime,
-	granted_by_role_id
+	object_id		bigint,
+	role_id			integer,
+	permission		smallint,
+	mtime			timestamp without time zone,
+	granted_by_role_id	integer
 ) as $$
 	insert into core.permissions_archive (
 		object_id,
@@ -675,7 +682,7 @@ create or replace function core.permission_delete (
 	where	object_id = $1 and
 		role_id = $2
 	returning
-		object_id as object_id
+		object_id as object_id,
 		role_id as role_id,
 		permission as permission,
 		mtime as mtime,
