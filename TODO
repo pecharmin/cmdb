@@ -6,7 +6,7 @@ Documentation
 * Database concept
 
 SQL functions
-* role membership modification and selection functions
+* locking functions for objects and references
 * select object tree by id with depth
 * delete cascade?
 
