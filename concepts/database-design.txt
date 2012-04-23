@@ -37,18 +37,21 @@ Entity relationship model
   |       |      |                                       |       |
   |       |      |         ^                   ^  ^     1:n      v
   |       |      +---+     |                   |  |      |
-  |       |          |    1:n   +----- n:1 ----+  |      |    archive_\
+  |       |          |    1:n   +----- n:1 ----+  |      |    roles_\
   |       |          |     |    |                 |      |    membership_\
   |       |          v     v    v                 |      |    archive
   |       |                                       |      v
   |       |       permissions_archive             |
-  |       |                                       |   archive_\
+  |       |                                       |   roles_\
   +-------+-------------- n:1 --------------------+   membership
+
+* Read the relation for vertical relation arrows from left to right
+  for top and bottom.
 
 
 
 objects -- Stores all data in objects
-======
+=======
 id			bigint		not null	PK	serial
 value			bytea		null
 value_type		enum(Types)	not null
@@ -83,7 +86,7 @@ Types: object, integer, double, text, blob
 
 
 objects_archive -- Archives modified objects as a history
-==============
+===============
 id			bigint		not null	PK
 value			bytea		null
 value_type		enum(Types)	not null
@@ -135,7 +138,7 @@ Types: parent, link
 
 
 references_archive -- Saves modified object references.
-==========
+==================
 object_id		bigint	 	not null
 referenced_object_id	bigint		null
 reference_type		enum(Types)	not null
@@ -167,7 +170,7 @@ Roles: user, group, system
 
 
 roles_membership -- Assigns roles to roles like groups or user cloning
-==========
+================
 role_id		int unsigned		not null	FK
 add_role_id	int unsigned		not null	FK
 
