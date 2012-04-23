@@ -11,4 +11,5 @@ SQL functions
 * delete cascade?
 
 Database schema extensions
-* add roles_membership_archive table for role group audit
+* indices (on version, name column etc.) as performance improvement
+* column on objects for hashing it's row's data?
