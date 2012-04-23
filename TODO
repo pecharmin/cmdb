@@ -1,6 +1,10 @@
 CMDB TODO
 =========
 
+Documentation
+* SQL functions
+* Database concept
+
 SQL functions
 * role membership modification and selection functions
 * select object tree by id with depth
