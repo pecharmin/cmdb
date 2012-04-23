@@ -3,12 +3,17 @@ Database Design
 The logical table structure of the CMDB is defined here.
 You also find a short concept how the fields should be used.
 
-* All data expect roles, permissions, tags and options is an object!
-  Tags and options are only references to objects.
-* Use PostgreSQL because they have MVCC and recursive queries.
+* All data expect references, roles, permissions, tags and options are
+  objects! Tags and options are only references to objects.
+* Use PostgreSQL because they have MVCC and recursive queries and
+  schemas and cool SQL function syntax.
 
 
 ### CMDB Core (.cmdb.core) ###
+
+The CMDB 'core' schema stores the user's data in objects and
+internal application options.
+
 
 Entity relationship model
 =========================
@@ -115,6 +120,7 @@ Types: object, integer, double, text, blob
 * A entry with version number 0 saves the creator of an object.
 
 
+
 references -- Links the objects as a tree togehter.
 ==========
 object_id		bigint	 	not null	UI FK core.objects(id)
@@ -154,30 +160,65 @@ modified_by_role_id	integer		not null	FK core.roles(id)
   self-explained by their parents ;)
 
 
-\/ TODO \/
 
-
-roles -- Defines users and groups for permission handling
+roles -- Defines abstract roles (users and groups) for permission handling.
 =====
-id		int unsigned		not null	PK	auto_increment
-type		enum(Roles)		not null
+id			integer		not null	PK	serial
+role_type		enum(Roles)	not null
+ctime			datetime	not null
+created_by_role_id	integer		not null	FK core.roles(id)
 
 Roles: user, group, system
 
-* The role id is the interface to a used authentication backend.
+* The role id is the interface to a used authentication backend which
+  stores the user data, see below.
+
+* The column role_type defines the role type, which can be a normal user,
+  a group or a system account. System account must not be created by the
+  application - there will no function be available for this.
+  New roles are also create with ids from a serial > 0 and must be due a
+  check contraint > 0.
+  Only normal users will be available to login to the cmdb GUI.
+* Field ctime saves the create time of a new role.
+* The created_by_role_id column saves the id of the role which created the
+  new one. The first role is always created by role with id 0 (system).
+
 * Created roles can never be changed after they have been created.
-* The first role is the system account for internal data handling (options).
+  This nessesary because objects, references and permissions links again
+  the role's id as foreign keys.
+  If a role needs to be deleted this is done in the authentication backend
+  tables like auth.db_users or may auth.ldap_users.
+* The first role is the system account for internal data handling (options,
+  users, etc.).
 
 
-roles_membership -- Assigns roles to roles like groups or user cloning
+roles_membership -- Assigns roles to roles like grouping or user cloning.
 ================
-role_id		int unsigned		not null	FK
-add_role_id	int unsigned		not null	FK
+role_id			integer		not null	FK core.roles(id)
+granted_role_id		integer		not null	FK core.roles(id)
+gtime			datetime	not null
+granted_by_role_id	integer		not null	FK core.roles(id)
 
-* role_id is the role which is member of the role add_role_id.
-* User rights can be cloned if a users role is added to another user role.
-* If the role in add_role_id is of type 'grp' this is like grouping users.
-* Roles of the type group can also be members of a group role.
+* The roles_membership table grants role privileges to other roles.
+
+* role_id is the role's id to which the privileges of role in
+  granted_role_id are granted to.
+* The gtime column saves the time a grant has been given.
+* Field granted_by_role_id saves the id of the role which granted a role.
+
+* User privileges can be cloned if a user's role is granted to another
+  user role -- user privileges cloning.
+* If the role in granted_role_id is of role_type 'group' this works
+  like grouping.
+* Roles of role_type group can also be members of group roles.
+
+
+\/ TODO \/
+
+
+roles_membership_archive -- Audits the role assignments.
+========================
+
 
 
 permissions -- Grants permissions for objects to roles
@@ -187,6 +228,7 @@ role_id		int unsigned		not null	FK
 permission	tinyint unsigned	not null
 
 Permissions:
+0 = none
 1 = read
 2 = write
 
@@ -196,8 +238,8 @@ Permissions:
   who changed it to the permissions audit table.
 
 
-permissions_audit -- Save the changed permissions as a trace
-=================
+permissions_archive -- Save the changed permissions as a trace
+===================
 object_id	bigint unsigned		not null	FK
 role_id		int unsigned		not null	FK
 permission	int unsigned		not null
@@ -206,6 +248,7 @@ atime		datetime		not null		default=now()
 
 * The permissions audit table traces all changes on the permissions table.
 * atime means there audit time.
+
 
 
 options -- Stores application internal options
@@ -219,25 +262,34 @@ object_id	bigint unsigned		not null	FK
   unique identifier.
 
 
+tags --
+====
+
+
 
 ### CMDB Database Auth (.cmdb.core.auth.db) ###
 
-TODO
+\/ TODO \/
 
 auth_db_users -- Stores user information in the database
 =============
-role_id		int unsigned	not null	FK
-username	varchar(40)	not null	unique index
+role_id		integer		not null	FK core.roles(id)
+username	varchar(40)	not null	UI
 email		varchar(250)	not null
 password	char(128)	null
+firstname	varchar(60)	not null
+lastname	varchar(60)	not null
 last_login	datetime	null
+mtime		datetime	not null
 ...
 
 
 auth_db_groups -- Storges group information to roles in database
 ==============
-role_id		int unsigned	not null	FK
-groupname	varchar(40)	not null	unique index
+role_id		integer		not null	FK core.roles(id)
+groupname	varchar(40)	not null	UI
+group_admin_id	integer		not null	FK core.roles(id)
+mtime		datetime	not null
 ...
 
 
