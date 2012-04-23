@@ -27,6 +27,7 @@ select * from core.object_insert('Servers in computing center', 'text', 'descrip
 select * from core.object_insert(null, 'object', '', 2);
 select * from core.object_insert('Rack A', 'text', 'name', 2);
 select * from core.object_insert('147', 'integer', 'BE', 2);
+
 select * from core.object_insert(null, 'object', '', 2);
 select * from core.object_insert('Rack B', 'text', 'name', 2);
 select * from core.object_insert('120', 'integer', 'BE', 2);
@@ -57,34 +58,42 @@ select * from core.object_insert('3', 'integer', 'BE', 2);
 -- Set references between new objetcs
 select * from core.reference_insert(1, null, 'parent', 2);
 select * from core.reference_insert(2, 1, 'parent', 2);
+
 select * from core.reference_insert(3, 1, 'parent', 1);
 select * from core.reference_insert(4, 3, 'parent', 1);
 select * from core.reference_insert(5, 3, 'parent', 1);
+
 select * from core.reference_insert(6, 1, 'parent', 1);
 select * from core.reference_insert(7, 6, 'parent', 1);
 select * from core.reference_insert(8, 6, 'parent', 1);
+
 select * from core.reference_insert(9, 3, 'parent', 1);
 select * from core.reference_insert(10, 9, 'parent', 2);
 select * from core.reference_insert(11, 9, 'parent', 2);
+
 select * from core.reference_insert(12, 3, 'parent', 2);
 select * from core.reference_insert(13, 12, 'parent', 2);
 select * from core.reference_insert(14, 12, 'parent', 2);
+
 select * from core.reference_insert(15, 6, 'parent', 4);
 select * from core.reference_insert(16, 6, 'parent', 4);
 select * from core.reference_insert(17, 6, 'parent', 4);
+
 select * from core.reference_insert(18, 15, 'parent', 4);
-select * from core.reference_insert(23, 16, 'parent', 4);
-select * from core.reference_insert(28, 17, 'parent', 4);
 select * from core.reference_insert(18, 15, 'parent', 4);
 select * from core.reference_insert(19, 15, 'parent', 4);
 select * from core.reference_insert(20, 9, 'link', 4);
 select * from core.reference_insert(21, 15, 'parent', 4);
 select * from core.reference_insert(22, 15, 'parent', 4);
+
+select * from core.reference_insert(23, 16, 'parent', 4);
 select * from core.reference_insert(23, 16, 'parent', 4);
 select * from core.reference_insert(24, 16, 'parent', 4);
 select * from core.reference_insert(25, 9, 'link', 4);
 select * from core.reference_insert(26, 16, 'parent', 4);
 select * from core.reference_insert(27, 16, 'parent', 4);
+
+select * from core.reference_insert(28, 17, 'parent', 4);
 select * from core.reference_insert(28, 17, 'parent', 2);
 select * from core.reference_insert(29, 17, 'parent', 2);
 select * from core.reference_insert(30, 12, 'link', 2);
