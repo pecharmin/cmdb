@@ -60,7 +60,7 @@ create table core.roles (
 	created_by_role_id	integer			not null	references core.roles (id)
 );
 
--- create application system user - TODO: move to initial data insert sql script
+-- create application system user - TODO: move to initial data insert sql script (TBD)
 insert into core.roles (id, role_type, ctime, created_by_role_id) values (0, 'system', now(), 0);
 
 -- roles_membership - Assigns roles to roles like grouping or user cloning
@@ -72,7 +72,7 @@ create table core.roles_membership (
 	granted_by_role_id	integer			not null	references core.roles (id),
 	-- a role should only be granted one time to a role
 	primary key (role_id, granted_role_id),
-	-- application user 'system' with id 0 must not be granted
+	-- application user 'system' with id 0 must not be granted to a role
 	check(granted_role_id != 0)
 );
 
@@ -105,7 +105,9 @@ create table core.objects_archive (
 	name			varchar(120)		null,
 	version			integer			not null,
 	mtime			timestamp		not null,
-	modified_by_role_id	integer			not null	references core.roles (id)
+	modified_by_role_id	integer			not null	references core.roles (id),
+	-- primary key ensures that a object can only have unique version numbers
+	primary key (id, version)
 );
 
 
