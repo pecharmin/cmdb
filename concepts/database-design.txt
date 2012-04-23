@@ -1,14 +1,17 @@
 Database Design
 ===============
-Here is the table structure of the CMDB defined.
+The logical table structure of the CMDB is defined here.
 You also find a short concept how the fields should be used.
 
-* All data, expect roles and permissions, is an object!
+* All data expect roles, permissions, tags and options is an object!
+  Tags and options are only references to objects.
 * Use PostgreSQL because they have MVCC and recursive queries.
 
 
 ### CMDB Core (.cmdb.core) ###
 
+Entity relationship model
+=========================
 
                    +------ 1:1 ---->  tags
     references_\   |
@@ -30,78 +33,135 @@ You also find a short concept how the fields should be used.
   |       |      |       |   |                 |  |
   |       |     1:n      v   v                 v  v
   |       |      |
-  |       |      |   permissions  <-- 1:1 -->  roles  <--+
-  |       |      |                                       |
-  |       |      |         ^                   ^  ^     1:n
+  |       |      |   permissions  <-- 1:1 -->  roles  <--+- 1:n -+
+  |       |      |                                       |       |
+  |       |      |         ^                   ^  ^     1:n      v
   |       |      +---+     |                   |  |      |
-  |       |          |    1:n   +----- n:1 ----+  |      v
-  |       |          |     |    |                 |
-  |       |          v     v    v                 |   roles_\
-  |       |                                       |   membership
+  |       |          |    1:n   +----- n:1 ----+  |      |    archive_\
+  |       |          |     |    |                 |      |    membership_\
+  |       |          v     v    v                 |      |    archive
+  |       |                                       |      v
   |       |       permissions_archive             |
-  |       |                                       |
-  +-------+-------------- n:1 --------------------+
+  |       |                                       |   archive_\
+  +-------+-------------- n:1 --------------------+   membership
+
 
 
 objects -- Stores all data in objects
 ======
-id		bigint unsigned		not null	PK	auto_increment
-parent_id	bigint unsigned		null		FK
-value		blob			null
-type		enum(Types)		not null
-name		varchar(80)		not null
-version		int unsigned		not null
-mtime		datetime		not null
-role_id		int unsigned		null		FK
+id			bigint		not null	PK	serial
+value			bytea		null
+value_type		enum(Types)	not null
+name			varchar(120)	null
+version			integer		not null
+mtime			datetime	not null
+locked_by_role_id	integer		null		FK core.roles(id)
 
-Types: obj(ect), int(eger), d(ou)bl(e), t(e)xt, blo(b)
+Types: object, integer, double, text, blob
 
-* A attribute is identified by the type field; it is one, if that is not
- 'obj'. So reverse, a object is defined by the type 'obj'.
-* The name field for tree objects can be understood as a tag field (non unique).
-* If a object is modified it will be copied to the archive table before.
-* If the role_id is set in an object, it is locked for him/her and can not be
-  modified by others.
-* When saving the object with new data, the role_id is copied to the archive
-  which also indicates who has created, modified or deleted the object and than
-  removed from the objects table (release the lock).
+* The objects table stores tree objects and data attributes.
+
+* A object is unique identifiable by it's id.
+* A tree object is identified by value_type = 'object'.
+* In reverse, a attribute is of another type of value_type, not 'object'.
+* The name column sets the name (non unique) of an attribute.
+* The version field displayes how often the object has been modified.
+* The mtime column saves the timestamp of last modification.
+* If the locked_by_role_id is set in an object, it is locked for a role
+  and can not be modified by others.
+
+* When a object is inserted the id, value_type and mtime is copied with a
+  version number of 0 to the objects_archive table. The role id of the
+  author is set there in the modified_by_role_id column.
+  The mtime of a entry with a version of 0 is the time of creation.
+* If a object is modified it will be copied to the objects_archive table
+  before. When saving the object with new data, the value of
+  locked_by_role_id is copied to the archive to the modified_by_role_id
+  column.
+* On object removal the data is copied like on a modification to the
+  objects_archive table an after this removed from the objects table.
 
 
 objects_archive -- Archives modified objects as a history
 ==============
-id		bigint unsigned		not null	FK
-parent_id	bigint unsigned		null		FK
-value		blob			null
-type		enum(Types)		not null
-name		varchar(60)		not null
-version		int unsigned		not null		index
-mtime		datetime		not null
-role_id		int unsigned		not null	FK
-atime		datetime		not null		default=now()
+id			bigint		not null	PK
+value			bytea		null
+value_type		enum(Types)	not null
+name			varchar(120)	null
+version			integer		not null	PK
+mtime			datetime	not null
+modified_by_role_id	integer		not null	FK core.roles(id)
 
-* Saves the objct history. atime means archive time.
+Types: object, integer, double, text, blob
+
+* Saves the modified objects as history.
+  Whenever a object is modified, the row is copied before to this table.
+
+* A row can clearly be identified by the combination of it's id and version
+  column.
+* The modified_by_role_id column displays the role id of one who created,
+  modified or deleted the object.
+* The other fields have same meaning as the fields of the objects table.
+
+* The modified_by_role_id column saves in general the role which changed
+  the objects data.
+* If no row of an entry in the objects_archive table can be found in the
+  objects table, it was offically deleted. The entry with the highest
+  version is the last snapshot from the objects table. The column
+  modified_by_role_id saved then the role id which deleted the object.
+* A entry with version number 0 saves the creator of an object.
 
 
-references -- Links are not data and must not be stored for revision
+references -- Links the objects as a tree togehter.
 ==========
-object_id	bigint unsigned	not null	FK
-ref_object_id	bigint unsigned	not null	FK
-type		enum(Types)	not null
+object_id		bigint	 	not null	UI FK core.objects(id)
+referenced_object_id	bigint		null		UI FK core.objects(id)
+reference_type		enum(Types)	not null	UI
+version			integer		not null
+mtime			datetime	not null
+locked_by_role_id	integer		null		FK core.roles(id)
 
-Types: l(i)nk, ...
+Types: parent, link
 
-* Who cares about links and so on? - Data is not affected through this and no
-  revisioning is needed for this stuff.
+* This tables links the objects with references togehter.
+* A reference can be of type parent or link.
+* A reference is clearly identifiable the the object id, the
+  referenced object id and the reference type. This is ensured by an
+  unique index and assures that a object can't have more than one parent or
+  linked multiple time for the same use.
+
+* version, mtime and locked_by_role_id are used in the same way like the
+  fields of the objects table and also equally handled.
 
 
-roles -- Defines users and roles for permission handling
+references_archive -- Saves modified object references.
+==========
+object_id		bigint	 	not null
+referenced_object_id	bigint		null
+reference_type		enum(Types)	not null
+version			integer		not null
+mtime			datetime	not null
+modified_by_role_id	integer		not null	FK core.roles(id)
+
+* The tables saves all modified references. 
+* A entry can be identified by it's object_id, referenced_object_id,
+  reference_type and version.
+
+* The version, mtime and modified_by_role_id fields and their usage are now
+  self-explained by their parents ;)
+
+
+\/ TODO \/
+
+
+roles -- Defines users and groups for permission handling
 =====
 id		int unsigned		not null	PK	auto_increment
 type		enum(Roles)		not null
 
-Roles: us(e)r, gr(ou)p
+Roles: user, group, system
 
-* The role_id is the interface to a used authentication backend.
+* The role id is the interface to a used authentication backend.
 * Created roles can never be changed after they have been created.
 * The first role is the system account for internal data handling (options).
 
