@@ -55,6 +55,21 @@ Entity relationship model
 
 
 
+About archiving tables
+======================
+The archive tables stores sensible data for versioning or auditing.
+
+Advantages:
+* Logical separation between current and old data.
+* Performance improvements when accessing current data (which will be done
+  the most time) cause of slim live tables.
+
+Disadvantages:
+* Complex data management.
+* Joins over two tables to get version information.
+
+
+
 objects -- Stores all data in objects
 =======
 id			bigint		not null	PK	serial
