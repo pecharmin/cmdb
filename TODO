@@ -3,12 +3,11 @@ CMDB TODO
 
 Documentation
 * SQL functions
-* Database concept
 
 SQL functions
-* locking functions for objects and references
 * select object tree by id with depth
 * delete cascade?
+* test cases
 
 Database schema extensions
 * indices (on version, name column etc.) as performance improvement
