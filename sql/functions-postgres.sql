@@ -83,7 +83,7 @@ create or replace function core.object_insert (
 		mtime,
 		locked_by_role_id
 	from core.objects
-	where	id=lastval();
+	where	id = lastval();
 $$ language sql security definer;
 
 grant execute on function core.object_insert (bytea, core.value_type_enum, varchar(120), integer) to cmdb;
@@ -120,14 +120,14 @@ create or replace function core.object_delete (
 		mtime,
 		$2
 	from core.objects
-	where	id=$1 and
+	where	id = $1 and
 		locked_by_role_id is null or
-		locked_by_role_id=$2;
+		locked_by_role_id = $2;
 
 	delete from core.objects
-	where	id=$1 and
+	where	id = $1 and
 		locked_by_role_id is null or
-		locked_by_role_id=$2
+		locked_by_role_id = $2
 	returning
 		id as id,
 		value as value,
@@ -175,9 +175,9 @@ create or replace function core.object_update (
 		mtime,
 		$5
 	from core.objects
-	where	id=$1 and
+	where	id = $1 and
 		locked_by_role_id is null or
-		locked_by_role_id=$5;
+		locked_by_role_id = $5;
 
 	update core.objects set
 		value			= $2,
@@ -185,9 +185,9 @@ create or replace function core.object_update (
 		name			= $4,
 		version			= version + 1,
 		mtime			= now()
-	where	id=$1 and
+	where	id = $1 and
 		locked_by_role_id is null or
-		locked_by_role_id=$5
+		locked_by_role_id = $5
 	returning
 		id as id,
 		value as value,
@@ -199,6 +199,38 @@ create or replace function core.object_update (
 $$ language sql security definer;
 
 grant execute on function core.object_update (bigint, bytea, core.value_type_enum, varchar(120), integer) to cmdb;
+
+
+-- lock object by id for a role
+-- Usage: core.object_lock(id, role_id)
+create or replace function core.object_lock (
+	bigint,
+	integer
+) returns table (
+	id			bigint,
+	value			bytea,
+	value_type		core.value_type_enum,
+	name			varchar(120),
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
+	update core.objects set
+		locked_by_role_id = $2
+	where	id = $1 and
+		locked_by_role_id is null or
+		locked_by_role_id = $2
+	returning
+		id as id,
+		value as value,
+		value_type as value_type,
+		name as name,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
+$$ language sql security definer;
+
+grant execute on function core.object_lock (bigint, integer) to cmdb;
 
 
 -- select object by id
@@ -215,7 +247,7 @@ create or replace function core.object_select (
 	locked_by_role_id	integer
 ) as $$
 	select * from core.objects
-	where	id=$1;
+	where	id = $1;
 $$ language sql security definer;
 
 grant execute on function core.object_select (bigint) to cmdb;
@@ -323,9 +355,9 @@ create or replace function core.reference_insert (
 		mtime,
 		locked_by_role_id
 	from core.references
-	where	object_id=$1 and
-		referenced_object_id=$2 and
-		reference_type=$3;
+	where	object_id = $1 and
+		referenced_object_id = $2 and
+		reference_type = $3;
 $$ language sql security definer;
 
 grant execute on function core.reference_insert (bigint, bigint, core.reference_type_enum, integer) to cmdb;
@@ -361,22 +393,22 @@ create or replace function core.reference_update (
 		mtime,
 		$4
 	from core.references
-	where	object_id=$1 and
-		referenced_object_id=$2 and
-		reference_type=$3 and
+	where	object_id = $1 and
+		referenced_object_id = $2 and
+		reference_type = $3 and
 		locked_by_role_id is null or
-		locked_by_role_id=$4;
+		locked_by_role_id = $4;
 
 	update core.references set
 		referenced_object_id	= $2,
 		reference_type		= $3,
 		version			= version + 1,
 		mtime			= now()
-	where	object_id=$1 and
-		referenced_object_id=$2 and
-		reference_type=$3 and
+	where	object_id = $1 and
+		referenced_object_id = $2 and
+		reference_type = $3 and
 		locked_by_role_id is null or
-		locked_by_role_id=$4
+		locked_by_role_id = $4
 	returning
 		object_id as object_id,
 		referenced_object_id as referenced_object_id,
@@ -419,22 +451,22 @@ create or replace function core.reference_update_root (
 		mtime,
 		$4
 	from core.references
-	where	object_id=$1 and
+	where	object_id = $1 and
 		referenced_object_id is null and
-		reference_type=$3 and
+		reference_type = $3 and
 		locked_by_role_id is null or
-		locked_by_role_id=$4;
+		locked_by_role_id = $4;
 
 	update core.references set
 		referenced_object_id	= $2,
 		reference_type		= $3,
 		version			= version + 1,
 		mtime			= now()
-	where	object_id=$1 and
+	where	object_id = $1 and
 		referenced_object_id is null and
-		reference_type=$3 and
+		reference_type = $3 and
 		locked_by_role_id is null or
-		locked_by_role_id=$4
+		locked_by_role_id = $4
 	returning
 		object_id as object_id,
 		referenced_object_id as referenced_object_id,
@@ -477,18 +509,18 @@ create or replace function core.reference_delete (
 		mtime,
 		$4
 	from core.references
-	where	object_id=$1 and
-		referenced_object_id=$2 and
-		reference_type=$3 and
+	where	object_id = $1 and
+		referenced_object_id = $2 and
+		reference_type = $3 and
 		locked_by_role_id is null or
-		locked_by_role_id=$4;
+		locked_by_role_id = $4;
 
 	delete from core.references
-	where	object_id=$1 and
-		referenced_object_id=$2 and
-		reference_type=$3 and
+	where	object_id = $1 and
+		referenced_object_id = $2 and
+		reference_type = $3 and
 		locked_by_role_id is null or
-		locked_by_role_id=$4
+		locked_by_role_id = $4
 	returning
 		object_id as object_id,
 		referenced_object_id as referenced_object_id,
@@ -501,9 +533,43 @@ $$ language sql security definer;
 grant execute on function core.reference_delete (bigint, bigint, core.reference_type_enum, integer) to cmdb;
 
 
+-- lock reference for a specific role by ids and type
+-- Usage: core.reference_lock(object_id, referenced_object_id, reference_type, role_id)
+create or replace function core.reference_lock (
+	bigint,
+	bigint,
+	core.reference_type_enum,
+	integer
+) returns table (
+	object_id		bigint,
+	referenced_object_id	bigint,
+	reference_type		core.reference_type_enum,
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
+	update core.references set
+		locked_by_role_id = $4
+	where	object_id = $1 and
+		referenced_object_id = $2 and
+		reference_type = $3 and
+		locked_by_role_id is null or
+		locked_by_role_id = $4
+	returning
+		object_id as object_id,
+		referenced_object_id as referenced_object_id,
+		reference_type as reference_type,
+		version as version,
+		mtime as mtime,
+		locked_by_role_id as locked_by_role_id;
+$$ language sql security definer;
+
+grant execute on function core.reference_lock (bigint, bigint, core.reference_type_enum, integer) to cmdb;
+
+
 -- select references (non root) by refed object_id and type
 -- Usage: core.reference_select(reffed_object_id, type)
-create or replace function core.references_select (
+create or replace function core.reference_select (
 	bigint,
 	core.reference_type_enum
 ) returns table (
@@ -519,12 +585,12 @@ create or replace function core.references_select (
 		reference_type = $2;
 $$ language sql security definer;
 
-grant execute on function core.references_select (bigint, core.reference_type_enum) to cmdb;
+grant execute on function core.reference_select (bigint, core.reference_type_enum) to cmdb;
 
 
 -- select root references by type
 -- Usage: core.reference_select_roots(type)
-create or replace function core.references_select_root (
+create or replace function core.reference_select_root (
 	core.reference_type_enum
 ) returns table (
 	object_id		bigint,
@@ -539,7 +605,7 @@ create or replace function core.references_select_root (
 		reference_type = $1;
 $$ language sql security definer;
 
-grant execute on function core.references_select_root (core.reference_type_enum) to cmdb;
+grant execute on function core.reference_select_root (core.reference_type_enum) to cmdb;
 
 
 
@@ -739,7 +805,7 @@ grant execute on function core.option_insert (varchar(120), bigint) to cmdb;
 
 
 -- delete option by name
--- Usage: core.options_delete(name)
+-- Usage: core.option_delete(name)
 create or replace function core.option_delete (
 	varchar(120)
 ) returns table (
