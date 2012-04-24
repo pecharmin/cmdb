@@ -63,7 +63,7 @@ value_type		enum(Types)	not null
 name			varchar(120)	null
 version			integer		not null
 mtime			datetime	not null
-locked_by_role_id	integer		null		FK core.roles(id)
+locked_by_role_id	integer		null		FK roles (id)
 
 Types: object, integer, double, text, blob
 
@@ -98,7 +98,7 @@ value_type		enum(Types)	not null
 name			varchar(120)	null
 version			integer		not null	PK
 mtime			datetime	not null
-modified_by_role_id	integer		not null	FK core.roles(id)
+modified_by_role_id	integer		not null	FK roles (id)
 
 Types: object, integer, double, text, blob
 
@@ -123,12 +123,12 @@ Types: object, integer, double, text, blob
 
 references -- Links the objects as a tree togehter.
 ==========
-object_id		bigint	 	not null	UI FK core.objects(id)
-referenced_object_id	bigint		null		UI FK core.objects(id)
+object_id		bigint	 	not null	UI FK objects (id)
+referenced_object_id	bigint		null		UI FK objects (id)
 reference_type		enum(Types)	not null	UI
 version			integer		not null
 mtime			datetime	not null
-locked_by_role_id	integer		null		FK core.roles(id)
+locked_by_role_id	integer		null		FK roles (id)
 
 Types: parent, link
 
@@ -150,7 +150,7 @@ referenced_object_id	bigint		null
 reference_type		enum(Types)	not null
 version			integer		not null
 mtime			datetime	not null
-modified_by_role_id	integer		not null	FK core.roles(id)
+modified_by_role_id	integer		not null	FK roles (id)
 
 * The tables saves all modified references. 
 * A entry can be identified by it's object_id, referenced_object_id,
@@ -166,7 +166,7 @@ roles -- Defines abstract roles (users and groups) for permission handling.
 id			integer		not null	PK	serial
 role_type		enum(Roles)	not null
 ctime			datetime	not null
-created_by_role_id	integer		not null	FK core.roles(id)
+created_by_role_id	integer		not null	FK roles (id)
 
 Roles: user, group, system
 
@@ -194,10 +194,10 @@ Roles: user, group, system
 
 roles_membership -- Assigns roles to roles like grouping or user cloning.
 ================
-role_id			integer		not null	FK core.roles(id)
-granted_role_id		integer		not null	FK core.roles(id)
+role_id			integer		not null	PK FK roles (id)
+granted_role_id		integer		not null	PK FK roles (id)
 gtime			datetime	not null
-granted_by_role_id	integer		not null	FK core.roles(id)
+granted_by_role_id	integer		not null	FK roles (id)
 
 * The roles_membership table grants role privileges to other roles.
 
@@ -205,37 +205,62 @@ granted_by_role_id	integer		not null	FK core.roles(id)
   granted_role_id are granted to.
 * The gtime column saves the time a grant has been given.
 * Field granted_by_role_id saves the id of the role which granted a role.
+* The primary key on role_id and granted_role_id columns ensures that a
+  role can not granted multiple times.
 
 * User privileges can be cloned if a user's role is granted to another
   user role -- user privileges cloning.
 * If the role in granted_role_id is of role_type 'group' this works
   like grouping.
 * Roles of role_type group can also be members of group roles.
-
-
-\/ TODO \/
+* When role membership is added or removed from a role this will be
+  recorded in the roles_membership_archive table.
 
 
 roles_membership_archive -- Audits the role assignments.
 ========================
+role_id			integer		not null	FK roles (id)
+granted_role_id		integer		not null	FK roles (id)
+gtime			datetime	not null
+granted_by_role_id	integer		not null	FK roles (id)
+grant_type		enum(Types)	not null 
+
+Types: grant, revoke
+
+* This table stores all assigned role memberships as an audit.
+* For field description see roles_membership table above.
+* The grant_type column informs if a role was assigned/granted or
+  removed/revoked from a role.
 
 
-
-permissions -- Grants permissions for objects to roles
+permissions -- Grants permissions for objects to roles.
 ===========
-object_id	bigint unsigned		not null	FK
-role_id		int unsigned		not null	FK
-permission	tinyint unsigned	not null
+object_id		bigint		not null	PK FK objects (id)
+role_id			integer		not null	PK FK roles (id)
+permission		smallint	not null
+mtime			datetime	not null
+granted_by_role_id	integer		not null	FK roles (id)
 
 Permissions:
 0 = none
 1 = read
 2 = write
 
+* The table stores permission levels as small integer values.
+
+* A higher integer values includes lower integer values, with means a
+  permission of 2 includes 1 and 0.
+* The time a permission was granted is saved in the mtime field.
+* The grantee's role id of a permission is stored in granted_by_role_id.
+
 * Permissions are applied recursive over a object tree and can only be
   overwritten by higher permissions.
-* When a permission is changed, it will be copied with the role_id of the user
-  who changed it to the permissions audit table.
+* Only the highest value is checked by the application.
+* When a permission is changed, it will be copied with the role_id of the
+  user who changed it to the permissions_archive table.
+
+
+\/ TODO \/
 
 
 permissions_archive -- Save the changed permissions as a trace
