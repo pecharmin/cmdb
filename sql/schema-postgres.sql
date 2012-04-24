@@ -73,15 +73,15 @@ create table core.roles_membership (
 	-- a role should only be granted one time to a role
 	primary key (role_id, granted_role_id),
 	-- application user 'system' with id 0 must not be granted to a role
-	check(granted_role_id != 0)
+	check(granted_role_id > 0)
 );
 
 -- roles_membership_archive - Achives granted roles
 create table core.roles_membership_archive (
-	role_id			integer			not null,
-	granted_role_id		integer			not null,
+	role_id			integer			not null	references core.roles (id),
+	granted_role_id		integer			not null	references core.roles (id),
 	gtime			timestamp		not null,
-	granted_by_role_id	integer			not null,
+	granted_by_role_id	integer			not null	references core.roles (id),
 	grant_type		core.grant_type_enum	not null
 );
 
