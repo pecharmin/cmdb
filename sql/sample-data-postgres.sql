@@ -1,3 +1,5 @@
+---- Insert sample data into a *clean* schema.
+
 -- connect to db ad cmdb
 \c cmdb cmdb
 
