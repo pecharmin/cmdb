@@ -275,41 +275,49 @@ Permissions:
   user who changed it to the permissions_archive table.
 
 
-\/ TODO \/
-
-
-permissions_archive -- Save the changed permissions as a trace
+permissions_archive -- Saves the changed permissions as a trace.
 ===================
-object_id	bigint unsigned		not null	FK
-role_id		int unsigned		not null	FK
-permission	int unsigned		not null
-changed_by_role	int unsigned		not null
-atime		datetime		not null		default=now()
+object_id	bigint		not null
+role_id		integer		not null	FK roles (id)
+permission	integer		not null
+mtime		datetime	not null
+changed_by_role	integer		not null	FK roles (id)
 
 * The permissions audit table traces all changes on the permissions table.
-* atime means there audit time.
+* Alle changes are simply copied to the archive table.
 
 
 
-options -- Stores application internal options
+options -- Stores application internal options.
 =======
-name		varchar(120)		not null	PK	unique index
-object_id	bigint unsigned		not null	FK
+name		varchar(120)	not null	PK
+object_id	bigint		not null	FK objects (id)
 
-* The option name should be dot notated like '.core.object.archive.not-on-modify'.
-* The value for this option is stored in the objects table.
-* Options can not be saved complete as objects because there is no human readable
-  unique identifier.
+* The options tables saves a readable reference to program internal used
+  objects. Program configuration should not be stores in filesystem.
+
+* The option name is a unique identifier and should be saved dot-notated
+  like '.core.object.archive.cleanup-interval'.
+
+* The value for an option is stored in the objects table.
+* Options can not be saved complete as objects because there is no human
+  readable unique identifier on them.
 
 
-tags --
+tags -- Stores human readable unique identifier to objects.
 ====
+name		varchar(120)	not null	PK
+object_id	bigint		not null	FK objects (id)
+
+* This tables stores unique human readable identifier as references
+  to objects.
 
 
+
+
+\/ TODO later -- non core functions \/
 
 ### CMDB Database Auth (.cmdb.core.auth.db) ###
-
-\/ TODO \/
 
 auth_db_users -- Stores user information in the database
 =============
