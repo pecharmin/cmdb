@@ -82,13 +82,11 @@ select * from core.reference_insert(16, 6, 'parent', 4);
 select * from core.reference_insert(17, 6, 'parent', 4);
 
 select * from core.reference_insert(18, 15, 'parent', 4);
-select * from core.reference_insert(18, 15, 'parent', 4);
 select * from core.reference_insert(19, 15, 'parent', 4);
 select * from core.reference_insert(20, 9, 'link', 4);
 select * from core.reference_insert(21, 15, 'parent', 4);
 select * from core.reference_insert(22, 15, 'parent', 4);
 
-select * from core.reference_insert(23, 16, 'parent', 4);
 select * from core.reference_insert(23, 16, 'parent', 4);
 select * from core.reference_insert(24, 16, 'parent', 4);
 select * from core.reference_insert(25, 9, 'link', 4);
@@ -96,7 +94,6 @@ select * from core.reference_insert(26, 16, 'parent', 4);
 select * from core.reference_insert(27, 16, 'parent', 4);
 
 select * from core.reference_insert(28, 17, 'parent', 4);
-select * from core.reference_insert(28, 17, 'parent', 2);
 select * from core.reference_insert(29, 17, 'parent', 2);
 select * from core.reference_insert(30, 12, 'link', 2);
 select * from core.reference_insert(31, 17, 'parent', 2);
