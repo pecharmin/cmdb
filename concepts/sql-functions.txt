@@ -1,0 +1,32 @@
+SQL function description
+========================
+
+All data is modified via SQL functions. This gives some advantages:
+* no access to tables
+* no posibility of SQL injection
+* internal version and archive management
+* slim and standarized SQL queries
+* ...
+
+
+Objects
+=======
+
+core.object_insert -- Insert an object plus archiving
+
+core.object_delete -- Move 
+
+
+
+References
+==========
+
+
+
+Roles, membership and permission
+================================
+
+
+
+Options and Tags
+================
