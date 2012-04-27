@@ -253,6 +253,27 @@ $$ language sql security definer;
 grant execute on function core.object_select (bigint) to cmdb;
 
 
+-- selects all root objects
+-- Usage: core.object_select_root()
+create or replace function core.object_select_root (
+) returns table (
+	id			bigint,
+	value			bytea,
+	value_type		core.value_type_enum,
+	name			varchar(120),
+	version			integer,
+	mtime			timestamp without time zone,
+	locked_by_role_id	integer
+) as $$
+	select o.* from core.objects o
+	left join	core.references r
+	on	o.id = r.object_id
+	where	r.referenced_object_id is null;
+$$ language sql security definer;
+
+grant execute on function core.object_select_root () to cmdb;
+
+
 -- select object by tag name
 -- Usage: core.object_select_tag(name)
 create or replace function core.object_select_tag (
@@ -760,7 +781,6 @@ grant execute on function core.permission_delete (bigint, integer, integer) to c
 
 -- select permission by object_id
 -- Usage: core.permission_select(object_id)
--- Return: row in core.permissions table format
 create or replace function core.permission_select (
 	bigint
 ) returns table (
@@ -777,6 +797,21 @@ $$ language sql security definer;
 grant execute on function core.permission_select (bigint) to cmdb;
 
 
+-- get permission recursive by object_id
+-- Usage: core.permission_check(object_id)
+create or replace function core.permission_check(
+	bigint
+) returns table
+	object_id		bigint,
+	role_id			integer,
+	permission		smallint,
+	mtime			timestamp without time zone,
+	granted_by_role_id	integer
+) as $$
+
+$$ language sql security definer;
+
+grant execute on function core.permission_check (bigint) to cmdb;
 
 
 ---- option handling
