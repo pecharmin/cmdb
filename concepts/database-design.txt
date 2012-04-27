@@ -257,9 +257,11 @@ mtime			datetime	not null
 granted_by_role_id	integer		not null	FK roles (id)
 
 Permissions:
-0 = none
-1 = read
-2 = write
+0 = none (default if no permission exists)
+1 = read exclusive
+2 = read recursive
+3 = write exclusive
+4 = write recursive
 
 * The table stores permission levels as small integer values.
 
@@ -268,9 +270,14 @@ Permissions:
 * The time a permission was granted is saved in the mtime field.
 * The grantee's role id of a permission is stored in granted_by_role_id.
 
-* Permissions are applied recursive over a object tree and can only be
-  overwritten by higher permissions.
-* Only the highest value is checked by the application.
+* Permissions are applied may recursive over a object tree or not.
+* Permissions can only be overwritten by higher permission levels.
+* Exclusive permissions applies only to this special object and are not
+  granted recursive over the tree. For that special object needs no
+  permission to be granted on the parents. - A exclusive permissions makes
+  all parent objects reverse recursive up to the root readable for
+  the user.
+* Only the highest available value is checked by the application.
 * When a permission is changed, it will be copied with the role_id of the
   user who changed it to the permissions_archive table.
 
