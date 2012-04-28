@@ -273,10 +273,9 @@ Permissions:
 * Permissions are applied may recursive over a object tree or not.
 * Permissions can only be overwritten by higher permission levels.
 * Exclusive permissions applies only to this special object and are not
-  granted recursive over the tree. For that special object needs no
-  permission to be granted on the parents. - A exclusive permissions makes
-  all parent objects reverse recursive up to the root readable for
-  the user.
+  granted recursive over the tree.
+* When a permission is set on an object all parent objects will be
+  reverse recursive up to the root readable for the user.
 * Only the highest available value is checked by the application.
 * When a permission is changed, it will be copied with the role_id of the
   user who changed it to the permissions_archive table.
