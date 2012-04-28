@@ -254,8 +254,8 @@ grant execute on function core.object_select (bigint) to cmdb;
 
 
 -- selects all root objects
--- Usage: core.object_select_root()
-create or replace function core.object_select_root (
+-- Usage: core.object_select_roots()
+create or replace function core.object_select_roots (
 ) returns table (
 	id			bigint,
 	value			bytea,
@@ -265,13 +265,13 @@ create or replace function core.object_select_root (
 	mtime			timestamp without time zone,
 	locked_by_role_id	integer
 ) as $$
-	select o.* from core.objects o
-	left join	core.references r
+	select o.* from core.references r
+	left join	core.objects o
 	on	o.id = r.object_id
 	where	r.referenced_object_id is null;
 $$ language sql security definer;
 
-grant execute on function core.object_select_root () to cmdb;
+grant execute on function core.object_select_roots () to cmdb;
 
 
 -- select object by tag name
