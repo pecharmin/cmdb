@@ -66,7 +66,6 @@ Advantages:
 
 Disadvantages:
 * Complex data management.
-* Joins over two tables to get version information.
 
 
 
@@ -78,31 +77,30 @@ value_type		enum(Types)	not null
 name			varchar(120)	null
 version			integer		not null
 mtime			datetime	not null
-locked_by_role_id	integer		null		FK roles (id)
+modified_by_role_id	integer		null		FK roles (id)
 
 Types: object, integer, double, text, blob
 
 * The objects table stores tree objects and data attributes.
 
 * A object is unique identifiable by it's id.
-* A tree object is identified by value_type = 'object'.
-* In reverse, a attribute is of another type of value_type, not 'object'.
+* A tree object is identified by the value_type 'object'.
+* In reverse, a attribute is of another type of value_type, non 'object'.
 * The name column sets the name (non unique) of an attribute.
-* The version field displayes how often the object has been modified.
+* The version field displays how often the object has been modified.
+  The version number starts with 1.
 * The mtime column saves the timestamp of last modification.
-* If the locked_by_role_id is set in an object, it is locked for a role
-  and can not be modified by others.
+* And the modified_by_role_id field saves the role_id of the user who
+  changed this entry last time.
 
-* When a object is inserted the id, value_type and mtime is copied with a
-  version number of 0 to the objects_archive table. The role id of the
-  author is set there in the modified_by_role_id column.
-  The mtime of a entry with a version of 0 is the time of creation.
-* If a object is modified it will be copied to the objects_archive table
-  before. When saving the object with new data, the value of
-  locked_by_role_id is copied to the archive to the modified_by_role_id
-  column.
-* On object removal the data is copied like on a modification to the
-  objects_archive table an after this removed from the objects table.
+* When a object is inserted or modified it's new data is duplicated to the
+  objects_archive table for versioning.
+* On object removal the data is copied like on modifications to the
+  objects_archive table. After that a new row will be added to the archive
+  table with the id and value_type of the current entry. The version number
+  is set to 0, mtime to now() and the role_id of the user who deleted the
+  object is also set in the new row. After this the object will be deleted
+  from the objects table. Fin.
 
 
 objects_archive -- Archives modified objects as a history
@@ -118,7 +116,7 @@ modified_by_role_id	integer		not null	FK roles (id)
 Types: object, integer, double, text, blob
 
 * Saves the modified objects as history.
-  Whenever a object is modified, the row is copied before to this table.
+  Whenever a object is modified, the row is copied to this table.
 
 * A row can clearly be identified by the combination of it's id and version
   column.
@@ -126,13 +124,10 @@ Types: object, integer, double, text, blob
   modified or deleted the object.
 * The other fields have same meaning as the fields of the objects table.
 
-* The modified_by_role_id column saves in general the role which changed
-  the objects data.
 * If no row of an entry in the objects_archive table can be found in the
   objects table, it was offically deleted. The entry with the highest
-  version is the last snapshot from the objects table. The column
-  modified_by_role_id saved then the role id which deleted the object.
-* A entry with version number 0 saves the creator of an object.
+  version is the last snapshot from the objects table.
+* A entry with version number 0 saves the role_id who delete an object.
 
 
 
@@ -143,7 +138,7 @@ referenced_object_id	bigint		null		UI FK objects (id)
 reference_type		enum(Types)	not null	UI
 version			integer		not null
 mtime			datetime	not null
-locked_by_role_id	integer		null		FK roles (id)
+modified_by_role_id	integer		null		FK roles (id)
 
 Types: parent, link
 
@@ -154,7 +149,7 @@ Types: parent, link
   unique index and assures that a object can't have more than one parent or
   linked multiple time for the same use.
 
-* version, mtime and locked_by_role_id are used in the same way like the
+* version, mtime and modified_by_role_id are used in the same way like the
   fields of the objects table and also equally handled.
 
 
@@ -277,8 +272,6 @@ Permissions:
 * When a permission is set on an object all parent objects will be
   reverse recursive up to the root readable for the user.
 * Only the highest available value is checked by the application.
-* When a permission is changed, it will be copied with the role_id of the
-  user who changed it to the permissions_archive table.
 
 
 permissions_archive -- Saves the changed permissions as a trace.
@@ -287,7 +280,7 @@ object_id	bigint		not null
 role_id		integer		not null	FK roles (id)
 permission	integer		not null
 mtime		datetime	not null
-changed_by_role	integer		not null	FK roles (id)
+granted_by_role	integer		not null	FK roles (id)
 
 * The permissions audit table traces all changes on the permissions table.
 * Alle changes are simply copied to the archive table.

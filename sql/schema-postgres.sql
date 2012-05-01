@@ -89,12 +89,12 @@ create table core.roles_membership_archive (
 -- objects - Stores all data in objects
 create table core.objects (
 	id			bigserial		not null	primary key,
-	value			bytea			null		default null,
+	value			bytea			null,
 	value_type		core.value_type_enum	not null,
 	name			varchar(120)		null,
 	version			integer			not null,
 	mtime			timestamp		not null,
-	locked_by_role_id	integer			null		references core.roles (id) default null
+	modified_by_role_id	integer			not null	references core.roles (id)
 );
 
 -- objects_archive - Archives modified objects as a history
@@ -118,7 +118,7 @@ create table core.references (
 	reference_type		core.reference_type_enum not null,
 	version			integer			not null,
 	mtime			timestamp		not null,
-	locked_by_role_id	integer			null		references core.roles (id) default null,
+	modified_by_role_id	integer			not null	references core.roles (id),
 	-- Note on this constraint: There can be multiple entries with the same object_id
 	-- and reference_type when referenced_object_id is null, cause NULL = NULL is NULL
 	-- and not true *. This does not harm the referential integrity because a null on
@@ -148,7 +148,7 @@ create table core.permissions (
 	primary key(object_id, role_id)
 );
 
--- permissions_audit - Save the changed permissions as a audit
+-- permissions_archive - Save the changed permissions as a audit
 create table core.permissions_archive (
 	object_id		bigint			not null,
 	role_id			integer			not null	references core.roles (id),
