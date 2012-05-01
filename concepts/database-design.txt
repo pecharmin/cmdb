@@ -257,6 +257,7 @@ Permissions:
 2 = read recursive
 3 = write exclusive
 4 = write recursive
+5 = write recursive with grant option
 
 * The table stores permission levels as small integer values.
 

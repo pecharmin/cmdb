@@ -5,6 +5,7 @@ Documentation
 * SQL functions
 
 SQL functions
+* no type checking for input parameters
 * select object tree by id with depth
 * delete cascade?
 * test cases
