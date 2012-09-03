@@ -199,8 +199,22 @@ grant execute on function core.object_select (bigint) to cmdb;
 --	mtime			timestamp without time zone,
 --	modified_by_role_id	integer
 --) as $$
--- TBD
---	with query
+-- TODO: prevent cycles, implement depth limit
+--	with recursive references_tree (oid, roid) as (
+--		select
+--			r.object_id,
+--			r.referenced_object_id
+--		from core.references r
+--		right join core.objects o on
+--			r.object_id = o.id
+--		where o.id = id
+--		union
+--		select
+--			r.object_id,
+--			r.referenced_object_id
+--		from references_tree rt, core.references r
+--		where r.referenced_object_id = rt.oid
+--	) select * from references_tree;
 --$$ language sql security definer;
 
 --grant execute on function core.object_select_tree (bigint, smallint) to cmdb;
