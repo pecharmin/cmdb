@@ -103,3 +103,11 @@ select * from core.reference_insert(32, 17, 'parent', 2);
 select * from core.tag_insert('root', 1);
 select * from core.tag_insert('server', 6);
 select * from core.tag_insert('racks', 3);
+
+-- permissions
+-- \/ wrong input types
+select * from core.permission_insert(1, 2, 5, 0);
+select * from core.permission_insert(3, 4, 2, 1);
+select * from core.permission_insert(15, 3, 2, 4);
+select * from core.permission_insert(17, 3, 2, 1);
+select * from core.permission_insert(9, 5, 5, 2);
