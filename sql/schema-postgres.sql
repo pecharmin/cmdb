@@ -142,10 +142,11 @@ create table core.references_archive (
 create table core.permissions (
 	object_id		bigint			not null	references core.objects (id),
 	role_id			integer			not null	references core.roles (id),
-	permission		smallint		not null	check (permission >= 0) default 0,
+	permission		smallint		not null	default 0,
 	mtime			timestamp		not null,
 	granted_by_role_id	integer			not null	references core.roles (id),
-	primary key(object_id, role_id)
+	primary key(object_id, role_id),
+	check (permission >= 0)
 );
 
 -- permissions_archive - Save the changed permissions as a audit
